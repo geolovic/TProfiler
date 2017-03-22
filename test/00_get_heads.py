@@ -1,0 +1,89 @@
+# -*- coding: utf-8 -*-
+"""
+
+José Vicente Pérez
+Granada University (Spain)
+March, 2017
+
+Testing suite for profiler.py
+Last modified: 09 March 2017
+"""
+
+import time
+import profiler as p
+print "-" * 40
+print "Tests for profiler.get_heads()"
+
+
+def test01():
+    """
+    Test for get_heads() function
+    Umbral de 1000 celdas
+    """
+
+    inicio = time.time()
+    print "=" * 40
+    print "Test 01 para profiler.get_heads() function"
+    print "Test in progress..."
+
+    # Test parameters
+    fac = "data/darro25fac.tif"
+    dem = "data/darro25.tif"
+    umbral = 1000
+    units = "CELL"
+    out_txt = "data/00_heads" + str(umbral) + units + ".txt"
+
+    cabeceras = p.get_heads(fac, dem, umbral, units)
+    outfile = open(out_txt, "w")
+    outfile.write("ROW;COL;X;Y;Z;Name\n")
+
+    for cab in cabeceras:
+        cab = [str(value) for value in cab]
+        linea = ";".join(cab) + "\n"
+        outfile.write(linea)
+
+    outfile.close()
+
+    fin = time.time()
+    print "Test finalizado en " + str(fin - inicio) + " segundos"
+    print "Resultado en " + out_txt
+    print "=" * 40
+
+
+def test02():
+    """
+    Test for get_heads() function
+    Umbral de 625000 m2 (1000 celdas)
+    """
+
+    inicio = time.time()
+    print "=" * 40
+    print "Test 02 para profiler.get_heads() function"
+    print "Test in progress..."
+
+    # Test parameters
+    fac = "data/darro25fac.tif"
+    dem = "data/darro25.tif"
+    umbral = 625000
+    units = "MAP"
+    out_txt = "data/00_heads" + str(umbral) + units + ".txt"
+
+    cabeceras = p.get_heads(fac, dem, umbral, units)
+    outfile = open(out_txt, "w")
+    outfile.write("ROW;COL;X;Y;Z;Name\n")
+
+    for cab in cabeceras:
+        cab = [str(value) for value in cab]
+        linea = ";".join(cab) + "\n"
+        outfile.write(linea)
+
+    outfile.close()
+
+    fin = time.time()
+    print "Test finalizado en " + str(fin - inicio) + " segundos"
+    print "Resultado en " + out_txt
+    print "=" * 40
+
+
+test01()
+test02()
