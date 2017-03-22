@@ -435,7 +435,7 @@ class TProfile:
 
     def GetProjection(self):
         """
-        Returns a string with the projection in wkt
+        Returns a string with the projection as wkt
         """
         return self._srs
 
