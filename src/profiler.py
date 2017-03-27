@@ -335,6 +335,49 @@ def get_profiles(fac, dem, heads, basin="", tributaries=False, **kwargs):
     return out_profiles
 
 
+def get_chi_map(dem, fac, umbral, units="CELL", basin_shp="", main_ch_shp=""):
+    """
+
+    :param dem:
+    :param fac:
+    :param umbral:
+    :param units:
+    :param basin_shp:
+    :param main_ch_shp:
+    :return:
+    """
+    if basin_shp:
+        basin_geometries = []
+        dataset = ogr.Open(basin_shp)
+        layer = dataset.GetLayer(0)
+        for feat in layer:
+            basin_geometries.append(feat.GetGeometryRef())
+
+    if main_ch_shp:
+        main_channel_pts = []
+        dataset = ogr.Open(main_ch_shp)
+        layer = dataset.GetLayer(0)
+        for feat in layer:
+            main_channel_pts.append(feat.GetGeometryRef())
+        sorted_main_channels = []
+        for basin in basin_geometries:
+            for pto in main_channel_pts:
+                if basin.Contains(pto):
+                    sorted_main_channels.append(pto)
+                    break
+
+
+def profiles_to_shp(path, profiles, distance=0):
+    """
+
+    :param path:
+    :param profiles:
+    :param distance:
+    :return:
+    """
+    pass
+
+
 class TProfile:
     """
     Properties:
