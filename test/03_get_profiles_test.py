@@ -32,14 +32,25 @@ def test01():
     umbral = 1000
     units = "CELL"
 
-    cabeceras = p.heads_inside_basin(fac, dem, basin, umbral, units, main_ch)
-    perfiles = p.get_profiles(fac, dem, cabeceras, basin=basin, tributaries=True)
+    cabeceras = p.get_heads(fac, dem, umbral, units=units)
+    perfiles = p.get_profiles(fac, dem, cabeceras, tributaries=True)
     
     fin = time.time()
     print "Test finalizado en " + str(fin - inicio) + " segundos"
     print "=" * 40
-    draw_profiles(perfiles)
-    return perfiles
+    out_txt = "data/03_perfiles.txt"
+    outfile = open(out_txt, "w")
+    outfile.write("perfil;X;Y;Chi\n")
+    id_perfil = 0
+    for perfil in perfiles:
+        xi = perfil.get_x().astype("str")
+        yi = perfil.get_y().astype("str")
+        chi = perfil.get_chi()[::-1].astype("str")
+        for n in range(len(xi)):
+            linea = str(id_perfil) + ";" + xi[n] + ";" + yi[n] + ";" + chi[n] + "\n"
+            outfile.write(linea)
+        id_perfil += 1
+    outfile.close()
 
 
 def draw_profiles(perfiles):
@@ -50,26 +61,26 @@ def draw_profiles(perfiles):
     ax3 = fig.add_subplot(133)
 
     # Get the longest profile (i.e. the first one)
-    maxL = perfiles[0].Length()
+    maxL = perfiles[0].length()
 
     for perfil in perfiles:
         chi, zi = perfil.get_z_chi()
-        li = perfil.get_L(False)
+        li = perfil.get_l(False)
         li = maxL - li
-        xi = perfil.get_X()
-        yi = perfil.get_Y()
-        z = perfil.get_Z()
+        xi = perfil.get_x()
+        yi = perfil.get_y()
+        z = perfil.get_z()
         ax1.plot(xi, yi, color = "b")
         ax2.plot(li, z, color = "b")
         ax3.plot(chi, zi, color = "b")
 
     perfil = perfiles[0]
     chi, zi = perfil.get_z_chi()
-    li = perfil.get_L(False)
+    li = perfil.get_l(False)
     li = maxL - li
-    xi = perfil.get_X()
-    yi = perfil.get_Y()
-    z = perfil.get_Z()
+    xi = perfil.get_x()
+    yi = perfil.get_y()
+    z = perfil.get_z()
     ax1.plot(xi, yi, color="r")
     ax2.plot(li, z, color="r")
     ax3.plot(chi, zi, color="r")
