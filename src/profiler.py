@@ -73,8 +73,8 @@ def get_heads(fac, dem, umbral, units="CELL"):
         for cell in arr:
             row = int(cell[0])
             col = int(cell[1])
-            area = facraster.GetCellValue((row, col))
-            elev = demraster.GetCellValue((row, col))
+            area = facraster.get_cell_value((row, col))
+            elev = demraster.get_cell_value((row, col))
             point = facraster.cell_2_xy((row, col))
             if area == umbral:
                 heads.append((row, col, point[0], point[1], elev))
@@ -120,7 +120,7 @@ def heads_from_points(dem, point_shp, names_field=""):
         geom = feat.GetGeometryRef()
         punto = (geom.GetX(), geom.GetY())
         cell = demraster.xy_2_cell(punto)
-        elev = demraster.GetCellValue(cell)
+        elev = demraster.get_cell_value(cell)
         layerdef = layer.GetLayerDefn()
         fields = [layerdef.GetFieldDefn(idx).GetName() for idx in range(layerdef.GetFieldCount())]
         if names_field in fields:
@@ -184,7 +184,7 @@ def heads_inside_basin(fac, dem, basin, umbral, units="CELL", main_ch=""):
         geom = feat.GetGeometryRef()
         point = (geom.GetX(), geom.GetY())
         cell = demraster.xy_2_cell(point)
-        elev = demraster.GetCellValue(cell)
+        elev = demraster.get_cell_value(cell)
         basin_heads.insert(0, (cell[0], cell[1], point[0], point[1], elev, 0))
 
     return basin_heads
@@ -263,8 +263,8 @@ def get_profiles(fac, dem, heads, basin="", tributaries=False, **kwargs):
         # Calculate data for the first point
         pos = (int(head[0]), int(head[1]))
         point = demraster.cell_2_xy(pos)
-        area = facraster.GetCellValue(pos) * facraster.cellsize ** 2
-        z = demraster.GetCellValue(pos)
+        area = facraster.get_cell_value(pos) * facraster.cellsize ** 2
+        z = demraster.get_cell_value(pos)
         distance = 0
 
         # Add first point to profile data
@@ -285,8 +285,8 @@ def get_profiles(fac, dem, heads, basin="", tributaries=False, **kwargs):
 
             # Data of the new point
             next_point = demraster.cell_2_xy(next_pos)
-            z = demraster.GetCellValue(next_pos)
-            area = facraster.GetCellValue(next_pos) * facraster.cellsize ** 2
+            z = demraster.get_cell_value(next_pos)
+            area = facraster.get_cell_value(next_pos) * facraster.cellsize ** 2
             distance += math.sqrt((next_point[0] - point[0]) ** 2 + (next_point[1] - point[1]) ** 2)
 
             # Check if point is still inside basin (if specified)
@@ -296,18 +296,18 @@ def get_profiles(fac, dem, heads, basin="", tributaries=False, **kwargs):
                 if not geom.Contains(pto):
                     break
 
-            # Se añaden a las listas
+            # Se anaden a las listas
             profile_data.append((next_point[0], next_point[1], z, distance, area))
             positions.append(next_pos)
 
-            # Se comprueba si está "marcado";
-            # si lo está, coge el valor de chi0 y termina el bucle
+            # Se comprueba si esta "marcado";
+            # si lo esta, coge el valor de chi0 y termina el bucle
             # sino, se marca (con un 0) y se coge el siguiente punto
-            if chi_raster.GetCellValue(next_pos) >= 0:
-                chi0 = chi_raster.GetCellValue(next_pos)
+            if chi_raster.get_cell_value(next_pos) >= 0:
+                chi0 = chi_raster.get_cell_value(next_pos)
                 # Se coge tambien la distancia
                 if tributaries:
-                    dist0 = dist_raster.GetCellValue(next_pos)
+                    dist0 = dist_raster.get_cell_value(next_pos)
                 break
             else:
                 chi_raster.set_cell_value(pos, 0.0)

@@ -51,7 +51,7 @@ def open_raster(raster_path):
         return
     array = raster.GetRasterBand(1).ReadAsArray()
     geot = raster.GetGeoTransform()
-    proj = raster.get_projection()
+    proj = raster.GetProjection()
     nodata = raster.GetRasterBand(1).GetNoDataValue()
 
     return PRaster(array, geot, proj, nodata)
@@ -90,7 +90,7 @@ def create_from_template(template, dtype=None, nodata=None):
     temp_raster = gdal.Open(template)
     temp_banda = temp_raster.GetRasterBand(1)
     geot = temp_raster.GetGeoTransform()
-    proj = temp_raster.get_projection()
+    proj = temp_raster.GetProjection()
     xsize = temp_banda.XSize
     ysize = temp_banda.YSize
 

@@ -27,8 +27,6 @@ def test01():
     # Test parameters
     fac = "data/darro25fac.tif"
     dem = "data/darro25.tif"
-    basin = "data/cuenca_darro.shp"
-    main_ch = "data/darro_main.shp"
     umbral = 1000
     units = "CELL"
 
@@ -55,29 +53,29 @@ def test01():
 
 def draw_profiles(perfiles):
     import matplotlib.pyplot as plt
-    fig = plt.figure(figsize = (20, 6))
+    fig = plt.figure(figsize=(20, 6))
     ax1 = fig.add_subplot(131)
     ax2 = fig.add_subplot(132)
     ax3 = fig.add_subplot(133)
 
     # Get the longest profile (i.e. the first one)
-    maxL = perfiles[0].length()
+    max_l = perfiles[0].length()
 
     for perfil in perfiles:
         chi, zi = perfil.get_z_chi()
         li = perfil.get_l(False)
-        li = maxL - li
+        li = max_l - li
         xi = perfil.get_x()
         yi = perfil.get_y()
         z = perfil.get_z()
-        ax1.plot(xi, yi, color = "b")
-        ax2.plot(li, z, color = "b")
-        ax3.plot(chi, zi, color = "b")
+        ax1.plot(xi, yi, color="b")
+        ax2.plot(li, z, color="b")
+        ax3.plot(chi, zi, color="b")
 
     perfil = perfiles[0]
     chi, zi = perfil.get_z_chi()
     li = perfil.get_l(False)
-    li = maxL - li
+    li = max_l - li
     xi = perfil.get_x()
     yi = perfil.get_y()
     z = perfil.get_z()
@@ -86,4 +84,4 @@ def draw_profiles(perfiles):
     ax3.plot(chi, zi, color="r")
     plt.show()
     
-p = test01()
+test01()
