@@ -51,7 +51,7 @@ def get_heads(fac, dem, umbral, units="CELL"):
     :param dem: *str* -- Path to the DEM
     :param umbral: *float* -- Threshold for channel initiation (i.e. for head definition)
     :param units: *str -- Units of threshold ("MAP" / "CELL" ) (Default="MAP")
-    :return: *list* -- List of tuples (row, col, X, Y, Z, "id")
+    :return: *list* -- List of tuples (row, col, X, Y, Z, id)
     """
 
     # Open fac and dem rasters
@@ -103,12 +103,12 @@ def get_heads(fac, dem, umbral, units="CELL"):
 
 def heads_from_points(dem, point_shp, names_field=""):
     """
-    This function creates a list of tuples (row, col, X, Y, "id") from a point shapefile
+    This function creates a list of tuples (row, col, X, Y, Z, "id") from a point shapefile
 
     :param dem: *str* -- Path to the DEM
     :param point_shp: *str* -- Path to the point shapefile
-    :param names_field: *str* -- String with the field with profile names (Default="")
-    :return: *list* -- List of tuples (row, col, X, Y, elev, id)
+    :param names_field: *str* -- String with the field with profile names
+    :return: *list* -- List of tuples (row, col, X, Y, Z, 'id')
     """
 
     heads = []
@@ -128,66 +128,30 @@ def heads_from_points(dem, point_shp, names_field=""):
         else:
             name = str(n)
         n += 1
-        heads.append((cell[0], cell[1], punto[0], punto[1], elev, name))
+        heads.append([cell[0], cell[1], punto[0], punto[1], elev, name])
 
     return heads
 
 
-def heads_inside_basin(fac, dem, basin, umbral, units="CELL", main_ch=""):
-    # TODO Cambiar está función para que obtenga las cabeceras dentro de la cuenca a partir de cabeceras de entrada
-    # heads_inside_basin(heads, basin, main_ch="")
+def heads_inside_basin(heads, basin):
     """
     This function extracts heads that pass a threshold from a flow accumulation raster inside a determined basin
 
-    :param fac: *str* -- Path to the flow accumulation rater
-    :param dem: *str* -- Path to the DEM
-    :param basin: *str* -- Path to the basin shapefile (it takes the first polygon of the shapefile)
-    :param umbral: *float* -- Threshold for channel initiation (i.e. for head definition)
-    :param units: *str -- Units of threshold ("MAP" / "CELL" ) (Default="MAP")
-    :return: *list* -- List of tuples (row, col, X, Y, "id")
-    :param main_ch: *str* -- Path to the point shapefile with the main channel (it takes the first point)
+    :param heads: *list* -- List of tuples (row, col, X, Y, elev, id)
+    :param basin: *ogr.Geometry(ogr.wkbLinearRing)* -- Polygon defining the basin
     :return: *list* -- List of tuples (row, col, X, Y, "id")
     """
-
-    # Get all the heads in the DEM
-    heads = get_heads(fac, dem, umbral, units)
 
     if len(heads) == 0:
         return heads
 
-    # Get the basin shapefile and get only heads inside basin shapefile
-    driver = ogr.GetDriverByName("ESRI Shapefile")
-    dataset = driver.Open(basin)
-    layer = dataset.GetLayer(0)
-    feat = layer.GetFeature(0)
-    basin_polygon = feat.GetGeometryRef()
     basin_heads = []
-
     # Take only heads that are within basin polygon
     for head in heads:
         pto = ogr.Geometry(ogr.wkbPoint)
         pto.AddPoint(head[2], head[3])
-        if basin_polygon.Contains(pto):
+        if basin.Contains(pto):
             basin_heads.append(head)
-
-    # Ordenamos cabeceras por elevacion
-    heads = np.array(basin_heads)
-    ind = heads[:, 4].argsort()
-    ind = ind[::-1]
-    sorted_heads = heads[ind]
-    basin_heads = sorted_heads.tolist()
-
-    # Check if a main channel (head) has been defined
-    if main_ch:
-        demraster = p.open_raster(dem)
-        dataset = driver.Open(main_ch)
-        layer = dataset.GetLayer(0)
-        feat = layer.GetFeature(0)
-        geom = feat.GetGeometryRef()
-        point = (geom.GetX(), geom.GetY())
-        cell = demraster.xy_2_cell(point)
-        elev = demraster.get_cell_value(cell)
-        basin_heads.insert(0, (cell[0], cell[1], point[0], point[1], elev, 0))
 
     return basin_heads
 
