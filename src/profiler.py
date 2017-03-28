@@ -124,7 +124,7 @@ def heads_from_points(dem, point_shp, names_field=""):
         layerdef = layer.GetLayerDefn()
         fields = [layerdef.GetFieldDefn(idx).GetName() for idx in range(layerdef.GetFieldCount())]
         if names_field in fields:
-            name = feat[names_field]
+            name = str(feat[names_field])
         else:
             name = str(n)
         n += 1
@@ -134,6 +134,8 @@ def heads_from_points(dem, point_shp, names_field=""):
 
 
 def heads_inside_basin(fac, dem, basin, umbral, units="CELL", main_ch=""):
+    # TODO Cambiar está función para que obtenga las cabeceras dentro de la cuenca a partir de cabeceras de entrada
+    # heads_inside_basin(heads, basin, main_ch="")
     """
     This function extracts heads that pass a threshold from a flow accumulation raster inside a determined basin
 
@@ -335,39 +337,42 @@ def get_profiles(fac, dem, heads, basin="", tributaries=False, **kwargs):
     return out_profiles
 
 
-def get_chi_map(dem, fac, umbral, units="CELL", basin_shp="", main_ch_shp=""):
-    """
+# def get_chi_map(dem, fac, umbral, units="CELL", basin_shp="", main_ch_shp=""):
+#     """
+#
+#     :param dem:
+#     :param fac:
+#     :param umbral:
+#     :param units:
+#     :param basin_shp:
+#     :param main_ch_shp:
+#     :return:
+#     """
+#     if basin_shp:
+#         basin_geometries = []
+#         dataset = ogr.Open(basin_shp)
+#         layer = dataset.GetLayer(0)
+#         for feat in layer:
+#             basin_geometries.append(feat.GetGeometryRef())
+#
+#     if main_ch_shp:
+#         main_channel_pts = []
+#         dataset = ogr.Open(main_ch_shp)
+#         layer = dataset.GetLayer(0)
+#         for feat in layer:
+#             main_channel_pts.append(feat.GetGeometryRef())
+#         sorted_main_channels = []
+#         for basin in basin_geometries:
+#             for pto in main_channel_pts:
+#                 if basin.Contains(pto):
+#                     sorted_main_channels.append(pto)
+#                     break
 
-    :param dem:
-    :param fac:
-    :param umbral:
-    :param units:
-    :param basin_shp:
-    :param main_ch_shp:
-    :return:
-    """
-    if basin_shp:
-        basin_geometries = []
-        dataset = ogr.Open(basin_shp)
-        layer = dataset.GetLayer(0)
-        for feat in layer:
-            basin_geometries.append(feat.GetGeometryRef())
-
-    if main_ch_shp:
-        main_channel_pts = []
-        dataset = ogr.Open(main_ch_shp)
-        layer = dataset.GetLayer(0)
-        for feat in layer:
-            main_channel_pts.append(feat.GetGeometryRef())
-        sorted_main_channels = []
-        for basin in basin_geometries:
-            for pto in main_channel_pts:
-                if basin.Contains(pto):
-                    sorted_main_channels.append(pto)
-                    break
-
+# TODO Crear una funcion que obtenga features de lineas a partir de un perfil
+# TODO Crear una funcion que obtenga features de puntos a partir de un perfil
 
 def profiles_to_shp(path, profiles, distance=0):
+    # TODO Escribir documentacion para esta funcion
     """
 
     :param path:
@@ -375,7 +380,50 @@ def profiles_to_shp(path, profiles, distance=0):
     :param distance:
     :return:
     """
-    pass
+    # Creamos un shapefile (puntos o lineas, segun distance)
+    driver = ogr.GetDriverByName("ESRI Shapefile")
+    dataset = driver.CreateDatasource(path)
+    sp = profiles[0].srs
+    if distance > 0:
+        layer = dataset.CreateLayer("perfiles", sp, ogr.wkbLineString)
+    else:
+        layer = dataset.CreateLayer("perfiles", sp, ogr.wkbPoint)
+
+    # Anadimos campos
+    layer.CreateField(ogr.FieldDefn("id_profile", ogr.OFTInteger))
+    layer.CreateField(ogr.FieldDefn("L", ogr.OFTReal))
+    layer.CreateField(ogr.FieldDefn("area", ogr.OFTReal))
+    layer.CreateField(ogr.FieldDefn("chi", ogr.OFTReal))
+    layer.CreateField(ogr.FieldDefn("ksn", ogr.OFTReal))
+    layer.CreateField(ogr.FieldDefn("rksn", ogr.OFTReal))
+    layer.CreateField(ogr.FieldDefn("slope", ogr.OFTReal))
+    layer.CreateField(ogr.FieldDefn("rslope", ogr.OFTReal))
+
+    id_perfil = 1
+    for profile in profiles:
+        xi = profile.get_x()
+        yi = profile.get_y()
+        li = profiles.get_l()
+        ai = profile.get_a()
+        slp = profile.get_slope()[0]
+        rslp = profile.get_r2()
+        chi = profile.get_chi()
+        ksn, rksn = profile.get_ksn(n_points=profile.npoints, full=True)
+        for n in range(xi.size):
+            feat = ogr.Feature(layer.GetLayerDefn())
+            geom = ogr.Geometry(ogr.wkbPoint)
+            geom.AddPoint(xi[n], yi[n])
+            feat.SetGeometry(geom)
+            feat.SetField('id_profile', id_perfil)
+            feat.SetField('L', li[n])
+            feat.SetField('area', ai[n])
+            feat.SetField('chi', chi[n])
+            feat.SetField('ksn', ksn[n])
+            feat.SetField('rksn', rksn[n])
+            feat.SetField('slope', slp[n])
+            feat.SetField('rslope', rslp[n])
+            layer.CreateFeature(feat)
+        id_perfil += 1
 
 
 class TProfile:
