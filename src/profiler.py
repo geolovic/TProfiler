@@ -335,14 +335,14 @@ def get_profiles(fac, dem, heads, basin="", tributaries=False, **kwargs):
 # TODO Crear una funcion que obtenga features de lineas a partir de un perfil
 # TODO Crear una funcion que obtenga features de puntos a partir de un perfil
 
-def profiles_to_shp(path, profiles, distance=0):
-    # TODO Escribir documentacion para esta funcion
+def profiles_to_point_shapefile(path, profiles):
     """
+    This function takes a list of profiles and save their data in a point shapefile. The point shapefile will have a
+    point geometry in each vertex of each profile and will have the following fiedls:
+    "id_profile", "L", "area", "chi", "ksn", "rksn", "slope", "rslope"
 
-    :param path:
-    :param profiles:
-    :param distance:
-    :return:
+    :param path: *str* Path for the point shapefile
+    :param profiles: *list* List with TProfile objects
     """
     # Creamos un shapefile de puntos
     driver = ogr.GetDriverByName("ESRI Shapefile")
@@ -358,6 +358,7 @@ def profiles_to_shp(path, profiles, distance=0):
 
     id_perfil = 1
     for profile in profiles:
+        # Obtenemos todos los arrays con los datos del perfil
         xi = profile.get_x()
         yi = profile.get_y()
         li = profiles.get_l()
@@ -366,6 +367,8 @@ def profiles_to_shp(path, profiles, distance=0):
         rslp = profile.get_r2()
         chi = profile.get_chi()
         ksn, rksn = profile.get_ksn(n_points=profile.npoints, full=True)
+
+        # Recorremos los arrays y anadimos los campos
         for n in range(xi.size):
             feat = ogr.Feature(layer.GetLayerDefn())
             geom = ogr.Geometry(ogr.wkbPoint)
@@ -380,6 +383,41 @@ def profiles_to_shp(path, profiles, distance=0):
             feat.SetField('slope', slp[n])
             feat.SetField('rslope', rslp[n])
             layer.CreateFeature(feat)
+        id_perfil += 1
+
+
+def profiles_to_text(path, profiles):
+    """
+    This function takes a list of profiles and save their data in a text file. The text file will have the columns:
+    "id_profile", "L", "area", "chi", "ksn", "rksn", "slope", "rslope"
+
+    :param path: *str* Path for the text file
+    :param profiles: *list* List with TProfile objects
+    """
+    # Creamos un archivo de texto para escribir
+    fw = open(path, "w")
+    campos = ["id_profile", "L", "area", "chi", "ksn", "rksn", "slope", "rslope"]
+    linea = ";".join(campos)
+    fw.write(linea + "\n")
+
+    id_perfil = 1
+    for profile in profiles:
+        # Obtenemos todos los arrays con los datos del perfil
+        xi = profile.get_x()
+        yi = profile.get_y()
+        li = profiles.get_l()
+        ai = profile.get_a()
+        slp = profile.get_slope()[0]
+        rslp = profile.get_r2()
+        chi = profile.get_chi()
+        ksn, rksn = profile.get_ksn(n_points=profile.npoints, full=True)
+
+        # Recorremos los arrays y anadimos los campos
+        for n in range(xi.size):
+            linea = ";".join([id_perfil, li[n], ai[n], chi[n], ksn[n], rksn[n], slp[n], rslp[n]])
+            fw.write(linea + "\n")
+
+        # Index for the new point
         id_perfil += 1
 
 
@@ -678,6 +716,7 @@ class TProfile:
             else:
                 self._data[n, 5] = abs(gradient)
 
+    # noinspection PyTypeChecker
     def create_chi(self, a0=1, chi0=0.0):
         """
         This function creates the chi data array. Chi data will be calculated for each vertex of the river profile and
