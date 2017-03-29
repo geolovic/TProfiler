@@ -344,24 +344,17 @@ def profiles_to_shp(path, profiles, distance=0):
     :param distance:
     :return:
     """
-    # Creamos un shapefile (puntos o lineas, segun distance)
+    # Creamos un shapefile de puntos
     driver = ogr.GetDriverByName("ESRI Shapefile")
     dataset = driver.CreateDatasource(path)
     sp = profiles[0].srs
-    if distance > 0:
-        layer = dataset.CreateLayer("perfiles", sp, ogr.wkbLineString)
-    else:
-        layer = dataset.CreateLayer("perfiles", sp, ogr.wkbPoint)
+    layer = dataset.CreateLayer("perfiles", sp, ogr.wkbPoint)
 
     # Anadimos campos
-    layer.CreateField(ogr.FieldDefn("id_profile", ogr.OFTInteger))
-    layer.CreateField(ogr.FieldDefn("L", ogr.OFTReal))
-    layer.CreateField(ogr.FieldDefn("area", ogr.OFTReal))
-    layer.CreateField(ogr.FieldDefn("chi", ogr.OFTReal))
-    layer.CreateField(ogr.FieldDefn("ksn", ogr.OFTReal))
-    layer.CreateField(ogr.FieldDefn("rksn", ogr.OFTReal))
-    layer.CreateField(ogr.FieldDefn("slope", ogr.OFTReal))
-    layer.CreateField(ogr.FieldDefn("rslope", ogr.OFTReal))
+    campos = ["id_profile", "L", "area", "chi", "ksn", "rksn", "slope", "rslope"]
+    tipos = [0, 2, 2, 2, 2, 2, 2, 2]
+    for n in range(len(campos)):
+        layer.CreateField(ogr.FieldDefn(campos[n], tipos[n]))
 
     id_perfil = 1
     for profile in profiles:
