@@ -25,9 +25,9 @@ def test01():
     print "Test in progress..."
 
     # Test parameters
-    fac = "D:/Usuarios/Vicente/Desktop/sierranevada_santamarta_Granada/FlowAcc_projected_weightRainfall/FlowAcc_projected_weight.tif"
+    fac = "D:/Usuarios/Vicente/Desktop/sierranevada_santamarta_Granada/FlowAcc_projected/FlowAcc_projected.tif"
     dem = "D:/Usuarios/Vicente/Desktop/sierranevada_santamarta_Granada/DEM_SNSM/DEM_proj_fill_SNSM.tif"
-    umbral = 25000
+    umbral = 2000
     units = "CELL"
 
     cabeceras = p.get_heads(fac, dem, umbral, units=units)
@@ -36,7 +36,7 @@ def test01():
     fin = time.time()
     print "Test finalizado en " + str(fin - inicio) + " segundos"
     print "=" * 40
-    out_txt = "D:/Usuarios/Vicente/Desktop/perfiles.txt"
+    out_txt = "D:/Usuarios/Vicente/Desktop/perfiles3.txt"
     outfile = open(out_txt, "w")
     outfile.write("perfil;X;Y;Chi\n")
     id_perfil = 0
