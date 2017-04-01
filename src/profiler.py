@@ -34,6 +34,7 @@ import numpy as np
 import math
 import praster as p
 import ogr
+import osr
 
 PROFILE_DEFAULT = {'name': "",
                    'thetaref': 0.45,
@@ -156,32 +157,18 @@ def heads_inside_basin(heads, basin):
     return basin_heads
 
 
-def get_profiles(fac, dem, heads, basin="", tributaries=False, **kwargs):
+def get_profiles(fac, dem, heads, basin=None, tributaries=False, **kwargs):
     """
-    This function extracts profiles for each head (determined by heads list). It
-    completes rivers until the edge of the dem.
-    
-    Parameters:
-    ================
-    fac :: *str*
-        Path to the flow accumulation raster
-    dem :: *str*
-        Path to the Digital Elevation Model
-    heads :: *tuple*
-        Tuple with heads (row, col, X, Y, Z, name)
-    tributaries :: *bool*
-        Flag to indicate if source distance for tributaries are recorded
-        
-    kwargs :: *Arguments for profile creation*
-        thetaref :: *float* Reference m/n parameter for calculation
-        smooth_win :: *float* Window (meters) to smooth each profile with a movil mean
-        nPoints :: *int* Number of points down- and upstream for slope calculation in each pixel
+    This fucntion extracts profiles for all heads in heads list. It will complete river profiles until the edge of
+    the dem or until river get the basin limits (if basin is specified).
 
-    Returns:
-    ===============
-    profiles :: *list*
-        List with output TProfile Objects
-    
+    :param fac: PRaster Raster with the flow accumulation
+    :param dem: PRaster Raster with the Digital Elevation Model
+    :param heads: List of tuples (row, col, X, Y, "id")
+    :param basin: ogr.Geometry Polygon that represents one basin
+    :param tributaries: Boolean Flag to specify if mouth distances will be calculated
+    :param kwargs: TProfile arguments for profile creation
+    :return: list of TProfile objects
     """
 
     # Get facraster and demrasters as pRaster objects
@@ -196,25 +183,21 @@ def get_profiles(fac, dem, heads, basin="", tributaries=False, **kwargs):
     opt.update(kwargs)
     opt['srs'] = srs
 
-    # Creamos praster auxiliar para valores de Chi0 (con valores por defecto de -1)
+    # Auxiliar PRaster object to record values of Chi
     chi_raster = p.create_from_template(dem, p.gdal.GDT_Float32, nodata=-1.0)
-    # Empty raster to record intial distances
+
+    # Auxiliar PRaster object to record values of distance
     if tributaries:
         dist_raster = p.create_from_template(dem, p.gdal.GDT_Float32, nodata=0.0)
-
-    # Obtenemos poligono de cuenca de drenaje si se ha especificado
-    geom = None
-    if basin:
-        driver = ogr.GetDriverByName("ESRI Shapefile")
-        dataset = driver.Open(basin)
-        layer = dataset.GetLayer(0)
-        feat = layer.GetFeature(0)
-        geom = feat.GetGeometryRef()
 
     # Empty list to record output TProfile objects
     out_profiles = []
 
-    # Process all the rivers (i.e. all the heads)
+    # If all the heads come from the same basin, all of them will flow into first river
+    # there is no need to check if all vertexes are inside the basin, from the second head all will be inside
+    first_river = True
+
+    # Process all the heads
     for head in heads:
 
         # List to store tuples with profile data
@@ -255,11 +238,11 @@ def get_profiles(fac, dem, heads, basin="", tributaries=False, **kwargs):
             area = facraster.get_cell_value(next_pos) * facraster.cellsize ** 2
             distance += math.sqrt((next_point[0] - point[0]) ** 2 + (next_point[1] - point[1]) ** 2)
 
-            # Check if point is still inside basin (if specified)
-            if geom:
+            # Check if point is still inside basin (if specified and it is not the first head)
+            if basin and first_river:
                 pto = ogr.Geometry(ogr.wkbPoint)
                 pto.AddPoint(next_point[0], next_point[1])
-                if not geom.Contains(pto):
+                if not basin.Contains(pto):
                     break
 
             # Se anaden a las listas
@@ -297,62 +280,28 @@ def get_profiles(fac, dem, heads, basin="", tributaries=False, **kwargs):
                 if tributaries:
                     dist_raster.set_cell_value(position, distances[n])
                 n += 1
-
+        first_river = False
     return out_profiles
 
 
-# def get_chi_map(dem, fac, umbral, units="CELL", basin_shp="", main_ch_shp=""):
-#     """
-#
-#     :param dem:
-#     :param fac:
-#     :param umbral:
-#     :param units:
-#     :param basin_shp:
-#     :param main_ch_shp:
-#     :return:
-#     """
-#     if basin_shp:
-#         basin_geometries = []
-#         dataset = ogr.Open(basin_shp)
-#         layer = dataset.GetLayer(0)
-#         for feat in layer:
-#             basin_geometries.append(feat.GetGeometryRef())
-#
-#     if main_ch_shp:
-#         main_channel_pts = []
-#         dataset = ogr.Open(main_ch_shp)
-#         layer = dataset.GetLayer(0)
-#         for feat in layer:
-#             main_channel_pts.append(feat.GetGeometryRef())
-#         sorted_main_channels = []
-#         for basin in basin_geometries:
-#             for pto in main_channel_pts:
-#                 if basin.Contains(pto):
-#                     sorted_main_channels.append(pto)
-#                     break
-
-# TODO Crear una funcion que obtenga features de lineas a partir de un perfil
-# TODO Crear una funcion que obtenga features de puntos a partir de un perfil
-
-def profiles_to_shp(path, profiles, distance=0):
-    # TODO Escribir documentacion para esta funcion
+def profiles_to_shp(path, profiles):
     """
+    This function save a list of profiles in a point shapefile
 
-    :param path:
-    :param profiles:
-    :param distance:
-    :return:
+    :param path: str - Full path to the shapefile
+    :param profiles: list - List of TProfile objects
+    :return: None
     """
     # Creamos un shapefile de puntos
     driver = ogr.GetDriverByName("ESRI Shapefile")
-    dataset = driver.CreateDatasource(path)
-    sp = profiles[0].srs
+    dataset = driver.CreateDataSource(path)
+    sp = osr.SpatialReference()
+    sp.ImportFromWkt(profiles[0].get_projection()),
     layer = dataset.CreateLayer("perfiles", sp, ogr.wkbPoint)
 
     # Anadimos campos
     campos = ["id_profile", "L", "area", "chi", "ksn", "rksn", "slope", "rslope"]
-    tipos = [0, 2, 2, 2, 2, 2, 2, 2]
+    tipos = [0, 2, 12, 2, 2, 2, 2, 2]
     for n in range(len(campos)):
         layer.CreateField(ogr.FieldDefn(campos[n], tipos[n]))
 
@@ -360,7 +309,7 @@ def profiles_to_shp(path, profiles, distance=0):
     for profile in profiles:
         xi = profile.get_x()
         yi = profile.get_y()
-        li = profiles.get_l()
+        li = profile.get_l()
         ai = profile.get_a()
         slp = profile.get_slope()[0]
         rslp = profile.get_r2()
@@ -372,13 +321,13 @@ def profiles_to_shp(path, profiles, distance=0):
             geom.AddPoint(xi[n], yi[n])
             feat.SetGeometry(geom)
             feat.SetField('id_profile', id_perfil)
-            feat.SetField('L', li[n])
-            feat.SetField('area', ai[n])
-            feat.SetField('chi', chi[n])
-            feat.SetField('ksn', ksn[n])
-            feat.SetField('rksn', rksn[n])
-            feat.SetField('slope', slp[n])
-            feat.SetField('rslope', rslp[n])
+            feat.SetField('L', float(li[n]))
+            feat.SetField('area', float(ai[n]))
+            feat.SetField('chi', float(chi[n]))
+            feat.SetField('ksn', float(ksn[n]))
+            feat.SetField('rksn', float(rksn[n]))
+            feat.SetField('slope', float(slp[n]))
+            feat.SetField('rslope', float(rslp[n]))
             layer.CreateFeature(feat)
         id_perfil += 1
 
@@ -446,6 +395,7 @@ class TProfile:
         self.dem_res = float(dem_res)
         self.name = unicode(name)
         self.thetaref = abs(thetaref)
+        self.npoints = npoints
 
         # Exit if pf_data is empty
         # This creates an empty RiverProfile object
