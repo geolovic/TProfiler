@@ -105,18 +105,18 @@ def test03():
     # Obtenemos los canales principales
     main_heads = p.heads_from_points(dem, main_ch)
 
-    # Obtenemos los diferentes poligonos de las cuencas
+    # Abrimos shapefile de poligonos con las cuencas
     dataset = ogr.Open(basin)
     layer = dataset.GetLayer(0)
 
     perfiles = []
 
     for feat in layer:
+        # Obtenemos poligono de la cuenca
         basin = feat.GetGeometryRef()
         # Obtenemos las cabeceras de dentro de la cuenca
         basin_heads = p.heads_inside_basin(heads, basin)
         basin_main_heads = p.heads_inside_basin(main_heads, basin)
-
         # Combinamos ambos arrays (anadimos las cab principales al principio)
         for head in basin_main_heads:
             basin_heads.insert(0, head)
@@ -188,7 +188,7 @@ def save_profiles(profiles, path):
         ksn = perfil.get_ksn()
         for n in range(perfil.n_points):
             data = [str(id_profile), str(xi[n]), str(yi[n]), str(li[n]),
-                    str(area[n]), str(slope[n]) + str(chi[n]) + str(ksn[n])]
+                    str(area[n]), str(slope[n]), str(chi[n]), str(ksn[n])]
             linea = ";".join(data)
             linea += "\n"
             out_file.write(linea)

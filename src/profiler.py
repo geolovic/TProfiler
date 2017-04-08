@@ -261,8 +261,8 @@ def get_profiles(fac, dem, heads, basin=None, tributaries=False, **kwargs):
                 pos = tuple(next_pos)
             next_pos = facraster.get_flow(next_pos)
 
-        # Para que el rio sea valido tiene que tener contener al menos tres pixeles
-        if len(profile_data) >= 3:
+        # Para que el rio sea valido tiene que tener contener al menos cuatro pixeles
+        if len(profile_data) >= 4:
             # Creamos el perfil
             name = head[5]
             perfil = TProfile(np.array(profile_data), facraster.cellsize, name=name, thetaref=opt['thetaref'],
@@ -283,7 +283,22 @@ def get_profiles(fac, dem, heads, basin=None, tributaries=False, **kwargs):
     return out_profiles
 
 
-def profiles_to_shp(path, profiles):
+def profiles_to_shp(path, profiles, distance=0):
+    """
+    This function save a list of profiles in a shapefile (point or line shapefile, depending of the distance param)
+
+    :param path: str - Full path to the shapefile
+    :param profiles: list - List of TProfile objects
+    :param distance: float - Distance for the profile segments. If distance = 0, the shapefile will be a point shp
+    :return: None
+    """
+    if distance == 0:
+        _profiles_to_points(path, profiles)
+    else:
+        _profiles_to_lines(path, profiles, distance)
+
+
+def _profiles_to_points(path, profiles):
     """
     This function save a list of profiles in a point shapefile
 
@@ -291,156 +306,145 @@ def profiles_to_shp(path, profiles):
     :param profiles: list - List of TProfile objects
     :return: None
     """
-    # Creamos un shapefile de puntos
+    # Creates point shapefle
     driver = ogr.GetDriverByName("ESRI Shapefile")
     dataset = driver.CreateDataSource(path)
     sp = osr.SpatialReference()
     sp.ImportFromWkt(profiles[0].get_projection())
     layer = dataset.CreateLayer("perfiles", sp, ogr.wkbPoint)
 
-    # Anadimos campos
+    # Add fields
     campos = ["id_profile", "L", "area", "chi", "ksn", "rksn", "slope", "rslope"]
     tipos = [0, 2, 12, 2, 2, 2, 2, 2]
     for n in range(len(campos)):
         layer.CreateField(ogr.FieldDefn(campos[n], tipos[n]))
 
+    # Get data from all the profiles
     id_perfil = 1
     for profile in profiles:
         xi = profile.get_x()
         yi = profile.get_y()
         li = profile.get_l()
         ai = profile.get_area()
-        slp = profile.get_slope()[0]
+        chi = profile.get_chi()
+        ksn = profile.get_ksn()
+        rksn = profile.get_ksn_r2()
+        slp = profile.get_slope()
         rslp = profile.get_slope_r2()
-        chi = profile.get_chi()[::-1]
-        ksn, rksn = profile.get_ksn(n_points=profile.npoints, full=True)
-        for n in range(xi.size):
+        id_arr = np.zeros(xi.size)
+        id_arr.fill(id_perfil)
+        data = np.array((xi, yi, id_arr, li, ai, chi, ksn, rksn, slp, rslp)).T
+        data = data[:-1]  # Remove the last point, because it will have the area of the merging channel
+
+        for row in data:
+            row_list = row.tolist()  # To avoid numpy types
             feat = ogr.Feature(layer.GetLayerDefn())
             geom = ogr.Geometry(ogr.wkbPoint)
-            geom.AddPoint(xi[n], yi[n])
+            geom.AddPoint(row_list[0], row_list[1])
             feat.SetGeometry(geom)
-            feat.SetField('id_profile', id_perfil)
-            feat.SetField('L', float(li[n]))
-            feat.SetField('area', float(ai[n]))
-            feat.SetField('chi', float(chi[n]))
-            feat.SetField('ksn', float(ksn[n]))
-            feat.SetField('rksn', float(rksn[n]))
-            feat.SetField('slope', float(slp[n]))
-            feat.SetField('rslope', float(rslp[n]))
+
+            for idx, element in enumerate(row_list[2:]):
+                feat.SetField(campos[idx], element)
+
             layer.CreateFeature(feat)
+
         id_perfil += 1
 
 
-def profiles_to_line(path, profiles, distance):
+def _profiles_to_lines(path, profiles, distance):
     """
-    This function save a list of profiles in a point shapefile
+    This function save a list of profiles in a line shapefile
 
     :param path: str - Full path to the shapefile
     :param profiles: list - List of TProfile objects
+    :param distance: float - Distance for the profile segments
     :return: None
     """
-    # Creamos un shapefile de lineas
+
+    # Creates point shapefle
     driver = ogr.GetDriverByName("ESRI Shapefile")
     dataset = driver.CreateDataSource(path)
     sp = osr.SpatialReference()
     sp.ImportFromWkt(profiles[0].get_projection())
-    layer = dataset.CreateLayer("perfiles", sp, ogr.wkbLinearRing)
+    layer = dataset.CreateLayer("perfiles", sp, ogr.wkbLineString)
 
-    # Anadimos campos
+    # Add fields
     campos = ["id_profile", "L", "area", "chi", "ksn", "rksn", "slope", "rslope"]
     tipos = [0, 2, 12, 2, 2, 2, 2, 2]
     for n in range(len(campos)):
         layer.CreateField(ogr.FieldDefn(campos[n], tipos[n]))
 
+    id_perfil = 1
     for perfil in profiles:
-        feat = _profile_to_feature(perfil, layer, distance)
-        layer.CreateFeature(feat)
+        # Transformamos la distancia a número de celdas
+        # dx es el número de puntos que tendrá cada segmento (número impar)
+        cellsize = perfil.dem_res
+        if distance == 0:
+            dx = len(perfil._data)
+        else:
+            dx = int((distance / cellsize) + 0.5)
+            if dx % 2 == 0:
+                dx += 1
 
-
-def _profile_to_feature(perfil, layer, distance):
-    """
-    Creates a list of features from a TProfile
-    :param perfil:
-    :param layer:
-    :param distance:
-    :return:
-    """
-
-    # Transformamos la distancia a número de celdas
-    # dx es el número de puntos que tendrá cada segmento (número impar)
-    cellsize = perfil.dem_res
-    if distance == 0:
-        dx = len(perfil._data)
-    else:
-        dx = int((distance / cellsize) + 0.5)
-        if dx % 2 == 0:
-            dx += 1
-
-    p1 = 0
-    p2 = p1 + dx
-
-    # Get profile data
-    xi = perfil.get_x()
-    yi = perfil.get_y()
-    chi = perfil.get_chi()[::-1]
-    zi = perfil.get_z()
-    li = perfil.get_l()
-    area = perfil.get_area()
-
-    feat_list = []
-
-    while p1 < len(chi) - 3:
-
-        # Calculamos la pendiente y el ksn del segmento por regresion
-        if p2 >= len(chi):
-            p2 = len(chi) - 1
-        sample_x = xi[p1:p2]
-        sample_y = yi[p1:p2]
-        sample_chi = chi[p1:p2]
-        sample_zi = zi[p1:p2]
-        sample_li = li[p1:p2]
-
-        # Ksn by regression
-        coef, resid = np.polyfit(sample_chi, sample_zi, deg=1, full=True)[:2]
-        ksn = float(abs(coef[0]))
-        rksn = float(1 - resid / (sample_zi.size * sample_zi.var()))
-
-        # Slope by regression
-        coef, resid = np.polyfit(sample_li, sample_zi, deg=1, full=True)[:2]
-        slope = float(abs(coef[0]))
-        rslope = float(1 - resid / (sample_zi.size * sample_zi.var()))
-
-        # Get the other values
-        mid_pos = p1 + (dx / 2)
-        mid_chi = float(chi[mid_pos])
-        mid_area = int(area[mid_pos])
-        mid_l = float(li[mid_pos])
-
-        # Get geometry for the line
-        geom = ogr.Geometry(ogr.wkbLineString)
-        for n in range(len(sample_x)):
-            geom.AddPoint(float(sample_x[n]), float(sample_y[n]))
-
-        # Create the feature
-        feature = ogr.Feature(layer.GetLayerDefn())
-
-        # Add values to feature
-        fields = ["L", "area", "chi", "ksn", "slope", "rksn", "rslope"]
-        values = [mid_l, mid_area, mid_chi, ksn, slope, rksn, rslope]
-        for n in range(len(values)):
-            feature.SetField(fields[n], values[n])
-
-        # Add geometry to feature
-        geom = ogr.CreateGeometryFromWkt(geom.ExportToWkt())
-        feature.SetGeometry(geom)
-
-        feat_list.append(feature)
-
-        # Last point of the line was p2-1
-        p1 = p2 - 1
+        p1 = 0
         p2 = p1 + dx
 
-    return feat_list
+        # Get profile data from mouth to head
+        xi = perfil.get_x(False)
+        yi = perfil.get_y(False)
+        chi = perfil.get_chi(False)
+        zi = perfil.get_z(False)
+        li = perfil.get_l()[::-1]
+        area = perfil.get_area(False)
+
+        while p1 < len(chi) - 3:
+            # Get the data for the segments
+            if p2 >= len(chi):
+                p2 = len(chi)
+            sample_x = xi[p1:p2]
+            sample_y = yi[p1:p2]
+            sample_chi = chi[p1:p2]
+            sample_zi = zi[p1:p2]
+            sample_li = li[p1:p2]
+
+            # Ksn by regression
+            coef, resid = np.polyfit(sample_chi, sample_zi, deg=1, full=True)[:2]
+            ksn = float(abs(coef[0]))
+            rksn = float(1 - resid / (sample_zi.size * sample_zi.var()))
+
+            # Slope by regression
+            coef, resid = np.polyfit(sample_li, sample_zi, deg=1, full=True)[:2]
+            slope = float(abs(coef[0]))
+            rslope = float(1 - resid / (sample_zi.size * sample_zi.var()))
+
+            # Get the other values
+            mid_pos = p1 + ((p2 - p1) / 2)
+            mid_chi = float(chi[mid_pos])
+            mid_area = int(area[mid_pos])
+            mid_l = float(li[mid_pos])
+
+            # Get geometry for the line
+            geom = ogr.Geometry(ogr.wkbLineString)
+            for n in range(len(sample_x)):
+                geom.AddPoint(float(sample_x[n]), float(sample_y[n]))
+
+            # Create the feature
+            feature = ogr.Feature(layer.GetLayerDefn())
+
+            # Add values to feature
+            values = [id_perfil, mid_l, mid_area, mid_chi, ksn, slope, rksn, rslope]
+            for idx, value in enumerate(values):
+                feature.SetField(campos[idx], value)
+
+            # Add geometry to feature and feature to layer
+            feature.SetGeometry(geom)
+            layer.CreateFeature(feature)
+
+            # Last point of the line was p2-1
+            p1 = p2 - 1
+            p2 = p1 + dx
+
+        id_perfil += 1
 
 
 class TProfile:
@@ -518,7 +522,7 @@ class TProfile:
         aux_values.fill(np.nan)
         self._data = np.append(pf_data, aux_values, axis=1)
         # Set raw elevations
-        self._data[:,10] = np.copy(self._data[:,2])
+        self._data[:, 10] = np.copy(self._data[:, 2])
 
         # Remove peaks and flat segments (smooth with a window of 0 units)
         self.smooth()
@@ -630,7 +634,7 @@ class TProfile:
         :param cells: boolean - Specifies if areas are measured in cells (True) or in profile units (False)
         :return: numpy.array wiht area values for all vertices
         """
-        areas = np.copy(self._data[:,4])
+        areas = np.copy(self._data[:, 4])
         if not cells:
             areas *= self.dem_res ** 2
 
@@ -852,8 +856,6 @@ class TProfile:
         :return: numpy.array with ksn values for all vertexes. If full is true, it returns a tuple of arrays (ksn, r^2)
         """
 
-        ksn = []
-        r_2 = []
         chi = self.get_chi(False)
         if raw_z:
             zi = self.get_raw_z(False)
