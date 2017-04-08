@@ -66,7 +66,7 @@ def Create(xsize, ysize, dtype = gdal.GDT_Int16, proj = "", geot = (0.0, 1.0, 0.
     driver = gdal.GetDriverByName("GTiff")
     raster = driver.Create(path, xsize, ysize, 1, dtype)
     raster.SetGeoTransform(geot)
-    raster.SetProjection(proj)
+    raster.set_projection(proj)
     raster.GetRasterBand(1).SetNoDataValue(nodata)
     
     return pRaster(raster)
@@ -100,7 +100,7 @@ def CreateFromTemplate(template, dtype = None, nodata = None):
     ysize = temp_banda.YSize
     raster = driver.Create(path, xsize, ysize, 1, dtype)
     raster.SetGeoTransform(temp_raster.GetGeoTransform())
-    raster.SetProjection(temp_raster.GetProjection())
+    raster.set_projection(temp_raster.get_projection())
     raster.GetRasterBand(1).SetNoDataValue(nodata)
 
     return pRaster(raster)
