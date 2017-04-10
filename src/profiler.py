@@ -37,7 +37,7 @@ import ogr
 import osr
 
 
-PROFILE_DEFAULT = {'name': "", 'thetaref': 0.45, 'chi0': 0, 'reg_points': 4, 'srs': ""}
+PROFILE_DEFAULT = {'name': "", 'thetaref': 0.45, 'chi0': 0, 'reg_points': 4, 'srs': "", 'smooth' : 0}
 
 
 def get_heads(fac, dem, umbral, units="CELL"):
@@ -266,7 +266,7 @@ def get_profiles(fac, dem, heads, basin=None, tributaries=False, **kwargs):
             # Creamos el perfil
             name = head[5]
             perfil = TProfile(np.array(profile_data), facraster.cellsize, name=name, thetaref=opt['thetaref'],
-                              chi0=chi0, reg_points=opt['reg_points'], srs=srs, mouthdist=dist0)
+                              chi0=chi0, reg_points=opt['reg_points'], srs=srs, mouthdist=dist0, smooth=opt['smooth'])
             out_profiles.append(perfil)
             # Rellenamos las posiciones procesadas con los valores de chi
             # Y si hemos seleccionado tributaries, también se marcan las distancias
@@ -481,7 +481,7 @@ class TProfile:
     =======   ==============================================
     """
 
-    def __init__(self, pf_data, dem_res=0, name="", thetaref=0.45, chi0=0, reg_points=4, srs="", mouthdist=0):
+    def __init__(self, pf_data, dem_res=0, name="", thetaref=0.45, chi0=0, reg_points=4, srs="", mouthdist=0, smooth=0):
         """
         Class that defines a river profile with morphometry capabilities.
 
@@ -493,6 +493,7 @@ class TProfile:
         :param reg_points: *int* - Number of points (at each side) to calculate initial slope and ksn for each vertex
         :param srs: *str* - Spatial Reference system expresed as well knwon text (wkt)
         :param mouthdist: *float* - Distance from profile to the river mouth (for tributaries)
+        :param smooth: *float* - Initial distance to smooth elevations (before to calculate slopes and ksn)
 
         pf_data param: (numpy.array) with at least 5 columns:
 
@@ -524,8 +525,8 @@ class TProfile:
         # Set raw elevations
         self._data[:, 10] = np.copy(self._data[:, 2])
 
-        # Remove peaks and flat segments (smooth with a window of 0 units)
-        self.smooth()
+        # Smooth profile elevations before to calculate ksn and chi
+        self.smooth(smooth)
 
         # Create slopes, chi and ksn values
         self.calculate_slope(reg_points)
@@ -761,13 +762,14 @@ class TProfile:
         :param window: Window size (in profile units) to smooth the elevations of the river profile
         :return: None
         """
+        # Remove peaks and flat segments
+        for n in range(len(self._data) - 1):
+            if self._data[n + 1, 2] >= self._data[n, 2]:
+                self._data[n + 1, 2] = float(self._data[n, 2]) - 0.001
 
+        # Smooth elevations if window distance > 0
         if window > 0:
             n_cells = int(int((window / self.dem_res) + 0.5) / 2)
-        else:
-            n_cells = 0
-
-        if n_cells > 0:
             for ind in range(len(self._data)):
                 low = ind - n_cells
                 high = ind + n_cells + 1
@@ -776,11 +778,6 @@ class TProfile:
 
                 elevations = self._data[low:high, 10]
                 self._data[ind, 2] = np.mean(elevations)
-
-        # Remove peaks and flat segments
-        for n in range(len(self._data) - 1):
-            if self._data[n + 1, 2] >= self._data[n, 2]:
-                self._data[n + 1, 2] = float(self._data[n, 2]) - 0.001
 
     def reset_elevations(self):
         """
