@@ -9,9 +9,21 @@ Last modified: 13 March 2017
 
 import praster as p
 import ogr
+import osr
 import gdal
 import numpy as np
 print "Tests for profiler.get_channels"
+
+DEM = r"D:/Usuarios/Vicente/Desktop/SierraNevada test/gisdata/sn_40.tif"
+Flow_accumulation = r"D:/Usuarios/Vicente/Desktop/SierraNevada test/gisdata/sn_40_fac.tif"
+Threshold = 5000
+Units = "CELL"
+Basins = True
+Basin_shapefile = r"D:/Usuarios/Vicente/Desktop/SierraNevada test/gisdata/basins.shp"
+Main_channels = True
+Heads_shapefile = r"D:/Usuarios/Vicente/Desktop/SierraNevada test/gisdata/heads.shp"
+Names_field = "name"
+Output_channels = r"D:/Usuarios/Vicente/Desktop/SierraNevada test/gisdata/out_channels.shp"
 
 
 def get_heads(fac, dem, umbral, units="CELL"):
@@ -201,3 +213,43 @@ def get_channels(fac, dem, heads, basin=None):
     return out_channels
 
 
+def main(dem, fac, umbral, units, cuencas_shp, main_channels, name, out_channels):
+
+    # Obtenemos cabeceras
+    heads = get_heads(fac, dem, umbral, units)
+    if main_channels:
+        main_heads = heads_from_points(dem, main_channels, name)
+        for head in main_heads:
+            heads.insert(0, head)
+
+    # Get channels (each channel is a numpy array with 3 columns: x, y, z)
+    # Open basin shapefile if specified
+    if cuencas_shp:
+        channels = []
+        dataset = ogr.Open(cuencas_shp)
+        layer = dataset.GetLayer(0)
+        for feat in layer:
+            basin_geom = feat.GetGeometryRef()
+            basin_heads = heads_inside_basin(heads, basin_geom)
+            channels.extend(get_channels(fac, dem, basin_heads, basin_geom))
+    else:
+        channels = get_channels(fac, dem, heads)
+
+    # Creamos output
+    driver = ogr.GetDriverByName("ESRI Shapefile")
+    dataset = driver.CreateDataSource(out_channels)
+    sp = osr.SpatialReference()
+    sp.ImportFromWkt(p.open_raster(dem).proj)
+    layer = dataset.CreateLayer("channels", sp, ogr.wkbLineString)
+    for ch in channels:
+        geom = ogr.Geometry(ogr.wkbLineString)
+        for row in ch:
+            geom.AddPoint(float(row[0]), float(row[1]))
+        # Create the feature
+        feature = ogr.Feature(layer.GetLayerDefn())
+        # Add geometry to feature and feature to layer
+        feature.SetGeometry(geom)
+        layer.CreateFeature(feature)
+
+
+main(DEM, Flow_accumulation, Threshold, Units, Basin_shapefile, Heads_shapefile, Names_field, Output_channels)
