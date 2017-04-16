@@ -1,30 +1,66 @@
-# -*- coding: utf-8 -*-
-"""
-José Vicente Pérez
-Granada University (Spain)
-March, 2017
-Testing suite for profiler.py
-Last modified: 13 March 2017
-"""
+# -*- coding: iso-8859-15 -*-
+#
+#  Chi_Map_import.py
+#
+#  Copyright (C) 2017  J. Vicente Perez, Universidad de Granada
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+#  MA 02110-1301, USA.
+
+#  For additional information, contact to:
+#  Jose Vicente Perez Pena
+#  Dpto. Geodinamica-Universidad de Granada
+#  18071 Granada, Spain
+#  vperez@ugr.es // geolovic@gmail.com
+
+#  Version: 1.0
+#  April 16, 2017
+
+#  Last modified April 16, 2017
 
 import praster as p
 import ogr
 import osr
 import gdal
 import numpy as np
-print "Tests for profiler.get_channels"
 
-DEM = r"data/darro25.tif"
-Flow_accumulation = "data/darro25fac.tif"
-Output_channels = "data/out_main_ch.shp"
+##DEM=raster
+##Flow_accumulation=raster
+##Output_channels=output vector
+##Use_threshold=boolean True
+##Threshold=number 1000
+##Units=selection CELLS;MAP
+##Use_basins=boolean True
+##Basin_shapefile=vector
+##Use_heads=boolean True
+##Heads_shapefile=vector
+##Names_field=field Heads_shapefile
+
+# Debug
+DEM = "../../test/data/darro25.tif"
+Flow_accumulation = "../../test/data/darro25fac.tif"
+Output_channels = "../../test/data/out_main_ch.shp"
 Use_threshold = True
 Threshold = 1000
 Units = "CELL"
 Use_basins = True
-Basin_shapefile = "data/cuencas.shp"
+Basin_shapefile = "../../test/data/cuencas.shp"
 Use_heads = True
-Heads_shapefile = "data/main_channels.shp"
+Heads_shapefile = "../../test/data/main_channels.shp"
 Names_field = "name"
+# End debug
 
 
 def get_heads(fac, dem, umbral, units="CELL"):
@@ -211,7 +247,8 @@ def get_channels(fac, dem, heads, basin=None):
                 pos = tuple(next_pos)
             next_pos = facraster.get_flow(next_pos)
 
-        out_channels.append((head[5], np.array(chandata)))
+        if len(chandata) > 5:
+            out_channels.append((head[5], np.array(chandata)))
         first_river = False
     return out_channels
 
