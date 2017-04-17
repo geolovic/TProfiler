@@ -68,6 +68,66 @@ NTYPES = {'int8': 3, 'int16': 3, 'int32': 5, 'int64': 5, 'uint8': 1, 'uint16': 2
 GTYPES = {1: 'uint8', 2: 'uint16', 3: 'int16', 4: 'uint32', 5: 'int32', 6: 'float32', 7: 'float64'}
 
 
+class QgsIface:
+
+    def setText(self, mensaje):
+        print mensaje
+
+    def setPercent(self, percent):
+        print str(percent * 100) + "%"
+
+
+def main(dem, fac, use_umbral, umbral, units, use_basins, cuencas_shp, use_heads, main_channels, name, out_channels):
+    progress = QgsIface()
+
+    # Get all heads
+    progress.setText("Extracting heads ...")
+    if use_umbral:
+        heads = get_heads(fac, dem, umbral, units)
+    else:
+        heads = []
+
+    if use_heads:
+        main_heads = heads_from_points(dem, main_channels, name)
+        for head in main_heads:
+            heads.insert(0, head)
+
+    # Get channels (each channel is a numpy array with 3 columns: x, y, z)
+    # Open basin shapefile if specified
+    if use_basins:
+        channels = []
+        dataset = ogr.Open(cuencas_shp)
+        layer = dataset.GetLayer(0)
+        for feat in layer:
+            basin_geom = feat.GetGeometryRef()
+            basin_heads = heads_inside_basin(heads, basin_geom)
+            channels.extend(get_channels(fac, dem, basin_heads, basin_geom))
+    else:
+        channels = get_channels(fac, dem, heads)
+
+    # Creamos output
+    driver = ogr.GetDriverByName("ESRI Shapefile")
+    dataset = driver.CreateDataSource(out_channels)
+    sp = osr.SpatialReference()
+    sp.ImportFromWkt(open_raster(dem).proj)
+    layer = dataset.CreateLayer("channels", sp, ogr.wkbLineString)
+    layer.CreateField(ogr.FieldDefn("Name", ogr.OFTString))
+
+    progress.setText("Processing channels ...")
+    for ch in channels:
+        name = ch[0]
+        chandata = ch[1]
+        geom = ogr.Geometry(ogr.wkbLineString)
+        for row in chandata:
+            geom.AddPoint(float(row[0]), float(row[1]))
+        # Create the feature
+        feature = ogr.Feature(layer.GetLayerDefn())
+        # Add geometry to feature and feature to layer
+        feature.SetGeometry(geom)
+        feature.SetField("Name", name)
+        layer.CreateFeature(feature)
+
+
 def get_heads(fac, dem, umbral, units="CELL"):
     """
     Extracts heads from flow accumulation raster based in a threshold
@@ -151,7 +211,7 @@ def heads_from_points(dem, point_shp, names_field=""):
         layerdef = layer.GetLayerDefn()
         fields = [layerdef.GetFieldDefn(idx).GetName() for idx in range(layerdef.GetFieldCount())]
         if names_field in fields:
-            name = str(feat[names_field])
+            name = str(feat.GetField(names_field))
         else:
             name = str(n)
         n += 1
@@ -256,54 +316,6 @@ def get_channels(fac, dem, heads, basin=None):
             out_channels.append((head[5], np.array(chandata)))
         first_river = False
     return out_channels
-
-
-def main(dem, fac, use_umbral, umbral, units, use_basins, cuencas_shp, use_heads, main_channels, name, out_channels):
-
-    # Get all heads
-    if use_umbral:
-        heads = get_heads(fac, dem, umbral, units)
-    else:
-        heads = []
-
-    if use_heads:
-        main_heads = heads_from_points(dem, main_channels, name)
-        for head in main_heads:
-            heads.insert(0, head)
-
-    # Get channels (each channel is a numpy array with 3 columns: x, y, z)
-    # Open basin shapefile if specified
-    if use_basins:
-        channels = []
-        dataset = ogr.Open(cuencas_shp)
-        layer = dataset.GetLayer(0)
-        for feat in layer:
-            basin_geom = feat.GetGeometryRef()
-            basin_heads = heads_inside_basin(heads, basin_geom)
-            channels.extend(get_channels(fac, dem, basin_heads, basin_geom))
-    else:
-        channels = get_channels(fac, dem, heads)
-
-    # Creamos output
-    driver = ogr.GetDriverByName("ESRI Shapefile")
-    dataset = driver.CreateDataSource(out_channels)
-    sp = osr.SpatialReference()
-    sp.ImportFromWkt(open_raster(dem).proj)
-    layer = dataset.CreateLayer("channels", sp, ogr.wkbLineString)
-    layer.CreateField(ogr.FieldDefn("Name", ogr.OFTString))
-
-    for ch in channels:
-        name = ch[0]
-        chandata = ch[1]
-        geom = ogr.Geometry(ogr.wkbLineString)
-        for row in chandata:
-            geom.AddPoint(float(row[0]), float(row[1]))
-        # Create the feature
-        feature = ogr.Feature(layer.GetLayerDefn())
-        # Add geometry to feature and feature to layer
-        feature.SetGeometry(geom)
-        feature.SetField("Name", name)
-        layer.CreateFeature(feature)
 
 
 def open_raster(raster_path):
