@@ -421,6 +421,53 @@ def test08():
     print "=" * 40
 
 
+def test09():
+    """
+    Creates a TProfiler from an array with profile_data
+    Test for calculate_ksn
+    """
+    inicio = time.time()
+    print "=" * 40
+    print "Test 09 para TProfiler"
+    print "Testing ksn and SL plots"
+    print "Test in progress..."
+
+    # Test parameters
+    pf_data = np.load("data/darro_pfdata.npy")
+    dem = "data/darro25.tif"
+    demraster = pr.open_raster(dem)
+    srs = demraster.proj
+    cellsize = demraster.cellsize
+
+    # Creates the profile
+    perfil = p.TProfile(pf_data, cellsize, srs=srs)
+
+    reg_points = 12
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+
+    perfil.calculate_ksn(reg_points=reg_points)
+    perfil.calculate_slope(reg_points=reg_points)
+    li = perfil.get_l()
+    slope = perfil.get_slope()
+    ksn = perfil.get_ksn()
+    sl = slope * li
+
+    sl, = ax.plot(li, sl)
+    ax.set_ylabel("SL index")
+    ax.set_xlabel("Distance (m)")
+
+    twax = ax.twinx()
+    ksn, = twax.plot(li, ksn, color="r")
+    twax.set_ylabel("Ksn index")
+    twax.legend((sl, ksn), ("SL", "ksn"))
+    plt.show()
+
+    fin = time.time()
+    print "Test finalizado en " + str(fin - inicio) + " segundos"
+    print "=" * 40
+
+
 test01()
 test02()
 test03()
@@ -429,3 +476,4 @@ test05()
 test06()
 test07()
 test08()
+test09()

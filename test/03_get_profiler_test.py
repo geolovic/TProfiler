@@ -72,7 +72,7 @@ def test02():
     cab_darro = p.heads_from_points(dem, darro_main_ch)
     cabeceras = p.heads_inside_basin(cabeceras, basin)
     cabeceras.insert(0, cab_darro[0])
-    perfiles = p.get_profiles(fac, dem, cabeceras, basin, tributaries=True, thetaref=0.5, reg_points=10, smooth=150)
+    perfiles = p.get_profiles(fac, dem, cabeceras, basin, tributaries=True, thetaref=0.5, reg_points=10)
     save_profiles(perfiles, out_txt)
     draw_profiles(perfiles)  # Desmarcar para pintar los perfiles
 

@@ -28,7 +28,7 @@
 #  Version: 3.0
 #  March 02, 2017
 
-#  Last modified 27 March, 2017
+#  Last modified 09 May, 2017
 
 import numpy as np
 import math
@@ -583,7 +583,6 @@ class TProfile:
     def get_z(self, head=True, relative=False):
         """
         Returns elevation values for all vertices
-        If profile hasn't been smoothed, Z values will be the raw elevations
 
         :param head: boolean - Specifies if elevations are returned from head (True) or mouth (False)
         :param relative: boolean - Specifies if elevations are relative (min elevation = 0) or not
@@ -599,17 +598,23 @@ class TProfile:
         else:
             return z_values[::-1]
 
-    def get_raw_z(self, head=True):
+    def get_raw_z(self, head=True, relative=False):
         """
         Returns raw elevation values for all vertices
 
         :param head: boolean - Specifies if raw elevations are returned from head (True) or mouth (False)
+        :param relative: boolean - Specifies if elevations are relative (min elevation = 0) or not
         :return: numpy.array wiht elevation values for all vertices
         """
+        raw_z = np.copy(self._data[:, 10])
+        if relative:
+            z_min = raw_z[-1]
+            raw_z -= z_min
+
         if head:
-            return np.copy(self._data[:, 10])
+            return raw_z
         else:
-            return np.copy(self._data[::-1, 10])
+            return raw_z[::-1]
 
     def get_l(self, head=True):
         """
@@ -758,7 +763,7 @@ class TProfile:
 
     def smooth(self, window=0):
         """
-        Smooths the elevations of the profile with a movil mean of window size. It also remove peaks and flat segments
+        Smooths the elevations of the profile with a movil mean of window size. It also removes peaks and flat segments
         from the profile (to avoid problems when calculating slopes)
 
         :param window: Window size (in profile units) to smooth the elevations of the river profile
@@ -854,7 +859,8 @@ class TProfile:
         :param raw_z: bool Specifies if raw_z values are taken from calculate slopes (True) or not (False)
         :return: numpy.array with ksn values for all vertexes. If full is true, it returns a tuple of arrays (ksn, r^2)
         """
-
+        ksn_values = []
+        ksn_r2_values = []
         chi = self.get_chi(False)
         if raw_z:
             zi = self.get_raw_z(False)
@@ -875,14 +881,15 @@ class TProfile:
             gradient = poli[0]
             r2 = 1 - sce / (sample_z.size * sample_z.var())
 
-            if n == 269:
-                pass
-            self._data[n, 9] = abs(r2)
+            ksn_r2_values.append(float(abs(r2)))
 
             if abs(gradient) < 0.0001:
-                self._data[n, 7] = 0.0001
+                ksn_values.append(0.0001)
             else:
-                self._data[n, 7] = abs(gradient)
+                ksn_values.append(abs(gradient))
+
+        self._data[:, 7] = np.array(ksn_values)[::-1]
+        self._data[:, 9] = np.array(ksn_r2_values)[::-1]
 
     def get_best_theta(self, a0=1, step=0.05):
         """
@@ -933,4 +940,4 @@ class TProfile:
 
 
 def version():
-    return "Version: 4.0 - 06 April 2017"
+    return "Version: 4.1 - 09 May 2017"
