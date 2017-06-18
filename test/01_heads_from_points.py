@@ -6,13 +6,13 @@ Granada University (Spain)
 March, 2017
 
 Testing suite for profiler.py
-Last modified: 09 March 2017
+Last modified: 16 June 2017
 """
 
 import time
 import profiler as p
 
-print "Test for profiler.heads_from_points()"
+print("Test for profiler.heads_from_points()")
 
 
 def test01():
@@ -22,18 +22,19 @@ def test01():
     """
     
     inicio = time.time()
-    print "=" * 40
-    print "Test 01 para profiler.heads_from_points() function"
-    print "Test in progress..."
+    print("=" * 40)
+    print("Test 01 para profiler.heads_from_points() function")
+    print("Test in progress...")
     
     # Test parameters
     dem = "data/darro25.tif"
     pointshp = "data/cabeceras.shp"
     out_txt = "data/01_cabeceras.txt"
+    id_field = "id"
     
-    cabeceras = p.heads_from_points(dem, pointshp, "Name")
+    cabeceras = p.heads_from_points(dem, pointshp, id_field)
     outfile = open(out_txt, "w")
-    outfile.write("ROW;COL;X;Y;Z;Name\n")
+    outfile.write("ROW;COL;X;Y;Z;id\n")
     
     for cab in cabeceras:
         
@@ -44,9 +45,9 @@ def test01():
     outfile.close()
     
     fin = time.time()
-    print "Test finalizado en " + str(fin - inicio) + " segundos"
-    print "Resultado en " + out_txt
-    print "=" * 40
+    print("Test finalizado en " + str(fin - inicio) + " segundos")
+    print("Resultado en " + out_txt)
+    print("=" * 40)
 
 
 test01()

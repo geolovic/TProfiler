@@ -6,13 +6,14 @@ Granada University (Spain)
 March, 2017
 
 Testing suite for profiler.py
-Last modified: 09 March 2017
+Last modified: 16 June 2017
+    - Adapted for Python 3.5
 """
 
 import time
 import profiler as p
-print "-" * 40
-print "Tests for profiler.get_heads()"
+print("-" * 40)
+print("Tests for profi(ler.get_heads()")
 
 
 def test01():
@@ -22,9 +23,9 @@ def test01():
     """
 
     inicio = time.time()
-    print "=" * 40
-    print "Test 01 para profiler.get_heads() function"
-    print "Test in progress..."
+    print("=" * 40)
+    print("Test 01 para profiler.get_heads() function")
+    print("Test in progress...")
 
     # Test parameters
     fac = "data/darro25fac.tif"
@@ -45,9 +46,9 @@ def test01():
     outfile.close()
 
     fin = time.time()
-    print "Test finalizado en " + str(fin - inicio) + " segundos"
-    print "Resultado en " + out_txt
-    print "=" * 40
+    print("Test finalizado en " + str(fin - inicio) + " segundos")
+    print("Resultado en " + out_txt)
+    print("=" * 40)
 
 
 def test02():
@@ -57,9 +58,9 @@ def test02():
     """
 
     inicio = time.time()
-    print "=" * 40
-    print "Test 02 para profiler.get_heads() function"
-    print "Test in progress..."
+    print("=" * 40)
+    print("Test 02 para profiler.get_heads() function")
+    print("Test in progress...")
 
     # Test parameters
     fac = "data/darro25fac.tif"
@@ -80,9 +81,9 @@ def test02():
     outfile.close()
 
     fin = time.time()
-    print "Test finalizado en " + str(fin - inicio) + " segundos"
-    print "Resultado en " + out_txt
-    print "=" * 40
+    print("Test finalizado en " + str(fin - inicio) + " segundos")
+    print("Resultado en " + out_txt)
+    print("=" * 40)
 
 
 test01()

@@ -28,7 +28,7 @@
 #  Version: 3.0
 #  March 02, 2017
 
-#  Last modified 09 May, 2017
+#  Last modified 16 June, 2017
 
 import numpy as np
 import math
@@ -48,7 +48,7 @@ def get_heads(fac, dem, umbral, units="CELL"):
     :param dem: *str* -- Path to the DEM
     :param umbral: *float* -- Threshold for channel initiation (i.e. for head definition)
     :param units: *str -- Units of threshold ("MAP" / "CELL" ) (Default="MAP")
-    :return: *list* -- List of tuples (row, col, X, Y, Z, id)
+    :return: *numpy.array* -- Numpy.array with 6 columns [row, col, X, Y, Z, hid]
     """
 
     # Open fac and dem rasters
@@ -86,26 +86,26 @@ def get_heads(fac, dem, umbral, units="CELL"):
     else:
         nheads = len(heads)
         # Ordenamos las posiciones por su elevacion
-        heads = np.array(heads)
+        heads = np.array(heads, dtype="float32")
         ind = heads[:, 4].argsort()
         ind = ind[::-1]
         heads = heads[ind]
 
         # Anadimos columna con ids y devolvemos lista con cabeceras
-        ids = np.arange(nheads).astype("float32").reshape(nheads, 1)
-        output_heads = np.append(heads, ids, axis=1)
+        hids = np.arange(nheads).astype("float32").reshape(nheads, 1)
+        output_heads = np.append(heads, hids, axis=1)
 
-    return output_heads.tolist()
+    return output_heads
 
 
-def heads_from_points(dem, point_shp, names_field=""):
+def heads_from_points(dem, point_shp, id_field=""):
     """
     This function creates a list of tuples (row, col, X, Y, Z, "id") from a point shapefile
 
     :param dem: *str* -- Path to the DEM
     :param point_shp: *str* -- Path to the point shapefile
-    :param names_field: *str* -- String with the field with profile names
-    :return: *list* -- List of tuples (row, col, X, Y, Z, 'id')
+    :param id_field: *str* -- String with the id field (heads will be ordered by the values in this field)
+    :return: *numpy.array* -- Numpy.array with 6 columns [row, col, X, Y, Z, hid]
     """
 
     heads = []
@@ -120,46 +120,53 @@ def heads_from_points(dem, point_shp, names_field=""):
         elev = demraster.get_cell_value(cell)
         layerdef = layer.GetLayerDefn()
         fields = [layerdef.GetFieldDefn(idx).GetName() for idx in range(layerdef.GetFieldCount())]
-        if names_field in fields:
-            name = str(feat[names_field])
+        if id_field in fields:
+            hid = str(feat[id_field])
         else:
-            name = str(n)
+            hid = n + 1
         n += 1
-        heads.append([cell[0], cell[1], punto[0], punto[1], elev, name])
+        heads.append([cell[0], cell[1], punto[0], punto[1], elev, hid])
 
-    return heads
+    output_heads = np.array(heads, dtype="float32")
+    ind = output_heads[:, 5].argsort()
+    output_heads = output_heads[ind]
+
+    return output_heads
 
 
-def heads_inside_basin(heads, basin):
+def heads_inside_basin(heads, basin, first=0):
     """
     This function extracts heads that pass a threshold from a flow accumulation raster inside a determined basin
 
-    :param heads: *list* -- List of tuples (row, col, X, Y, elev, id)
+    :param heads: *numpy.array* -- Numpy.array with 6 columns [row, col, X, Y, Z, hid]
     :param basin: *ogr.Geometry(ogr.wkbLinearRing)* -- Polygon defining the basin
-    :return: *list* -- List of tuples (row, col, X, Y, "id")
+    :param first: *int* -- Identifier for the first head, all the other will have consecutives ids
+    :return: *numpy.array* -- Numpy.array with 6 columns [row, col, X, Y, Z, hid]
     """
 
-    if len(heads) == 0:
+    if heads.shape[0] == 0:
         return heads
 
     basin_heads = []
     # Take only heads that are within basin polygon
     for head in heads:
         pto = ogr.Geometry(ogr.wkbPoint)
-        pto.AddPoint(head[2], head[3])
+        pto.AddPoint(float(head[2]), float(head[3]))
         if basin.Contains(pto):
             basin_heads.append(head)
 
-    return basin_heads
+    output_heads = np.array(basin_heads, dtype="float32")
+    output_heads[:, 5] = np.arange(output_heads.shape[0]).astype("float32") + float(first)
+    return output_heads
 
 
 def get_profiles(fac, dem, heads, basin=None, tributaries=False, **kwargs):
     """
     This fucntion extracts profiles for all heads in heads list. It will complete river profiles until the edge of
     the dem or until the basin limits (if basin is specified).
-    :param fac: PRaster Raster with the flow accumulation
-    :param dem: PRaster Raster with the Digital Elevation Model
-    :param heads: List of tuples (row, col, X, Y, Z, "id")
+    :param fac: str. String with the path to the flow accumulation raster
+    :param dem: str. String with the path to the DEM raster
+    :param heads: List of tuples (row, col, X, Y, Z, hid)
     :param basin: ogr.Geometry Polygon that represents one basin
     :param tributaries: Boolean Flag to specify if mouth distances will be calculated
     :param kwargs: TProfile arguments for profile creation
@@ -264,12 +271,136 @@ def get_profiles(fac, dem, heads, basin=None, tributaries=False, **kwargs):
         # Para que el rio sea valido tiene que tener contener al menos cuatro pixeles
         if len(profile_data) >= 4:
             # Creamos el perfil
-            name = head[5]
-            perfil = TProfile(np.array(profile_data), facraster.cellsize, name=name, thetaref=opt['thetaref'],
+            perfil = TProfile(np.array(profile_data), facraster.cellsize, rid=head[5], thetaref=opt['thetaref'],
                               chi0=chi0, reg_points=opt['reg_points'], srs=srs, mouthdist=dist0, smooth=opt['smooth'])
             out_profiles.append(perfil)
             # Rellenamos las posiciones procesadas con los valores de chi
             # Y si hemos seleccionado tributaries, también se marcan las distancias
+            n = 0
+            distances = perfil.get_l(False)
+            distances = distances[::-1]
+            chi = perfil.get_chi(True)
+            for position in positions:
+                chi_raster.set_cell_value(position, float(chi[n]))
+                if tributaries:
+                    dist_raster.set_cell_value(position, float(distances[n]))
+                n += 1
+        first_river = False
+    return out_profiles
+
+
+def profiles_from_rivers(fac, dem, river_shapefile, **kwargs):
+    """
+    This fucntion extracts profiles for all heads in heads list. It will complete river profiles until the edge of
+    the dem or until the basin limits (if basin is specified).
+    :param fac: str. String with the path to the flow accumulation raster
+    :param dem: str. String with the path to the DEM raster
+    :param river_shapefile: str. String with the path to the river shapefile
+    :param kwargs: TProfile arguments for profile creation
+    :return: list of TProfile objects
+    """
+
+    # Get facraster and demrasters as pRaster objects
+    facraster = p.open_raster(fac)
+    demraster = p.open_raster(dem)
+
+    # Get spatial Reference system from dem raster
+    srs = demraster.proj
+
+    # Update profile arguments if some of them have been specified
+    opt = PROFILE_DEFAULT
+    opt.update(kwargs)
+    opt['srs'] = srs
+
+    # Auxiliar PRaster object to record values of Chi
+    chi_raster = p.create_from_template(dem, p.gdal.GDT_Float32, nodata=-1.0)
+
+    # Auxiliar PRaster object to record values of distance
+    dist_raster = p.create_from_template(dem, p.gdal.GDT_Float32, nodata=0.0)
+
+    # Empty list to record output TProfile objects
+    out_profiles = []
+
+    dataset = ogr.Open(river_shapefile)
+    layer = dataset.GetLayer(0)
+
+    # Process all the lines in river shapefile
+    for feat in layer:
+
+        # List to store tuples with profile data
+        profile_data = []
+
+        # Second list to store processed positions (to record Chi values later on)
+        positions = []
+
+        chi0 = 0
+        dist0 = 0
+
+        # Calculate data for the first point
+        pos = (int(head[0]), int(head[1]))
+        point = demraster.cell_2_xy(pos)
+        area = facraster.get_cell_value(pos)
+        if area == 0:
+            area = 1
+        z = demraster.get_cell_value(pos)
+        distance = 0
+
+        # Add first point to profile data
+        profile_data.append((point[0], point[1], z, distance, area))
+
+        # Add position to position list
+        positions.append(pos)
+
+        # 'Mark' Chi raster to indicate that the pixel was processed
+        # Chi raster is marked with a value of 0, latter these 0 values will be replaced with Chi values
+        chi_raster.set_cell_value(pos, 0)
+
+        # Obtain the next point following the flow direction
+        next_pos = facraster.get_flow(pos)
+
+        # Start bucle to obtain vertexes following river's flow
+        while next_pos:
+
+            # Data of the new point
+            next_point = demraster.cell_2_xy(next_pos)
+            z = demraster.get_cell_value(next_pos)
+            area = facraster.get_cell_value(next_pos)
+            distance += math.sqrt((next_point[0] - point[0]) ** 2 + (next_point[1] - point[1]) ** 2)
+
+            # Check if point is still inside basin (if specified and it is not the first head)
+            if basin and first_river:
+                pto = ogr.Geometry(ogr.wkbPoint)
+                pto.AddPoint(next_point[0], next_point[1])
+                if not basin.Contains(pto):
+                    break
+
+            # Se anaden a las listas
+            profile_data.append((next_point[0], next_point[1], z, distance, area))
+            positions.append(next_pos)
+
+            # Se comprueba si esta "marcado";
+            # si lo esta, coge el valor de chi0 y termina el bucle
+            # sino, se marca (con un 0) y se coge el siguiente punto
+            if chi_raster.get_cell_value(next_pos) >= 0:
+                chi0 = chi_raster.get_cell_value(next_pos)
+                # Se coge tambien la distancia
+                if tributaries:
+                    dist0 = dist_raster.get_cell_value(next_pos)
+                break
+            else:
+                chi_raster.set_cell_value(pos, 0.0)
+                point = tuple(next_point)
+                pos = tuple(next_pos)
+            next_pos = facraster.get_flow(next_pos)
+
+        # Para que el rio sea valido tiene que tener contener al menos cuatro pixeles
+        if len(profile_data) >= 4:
+            # Creamos el perfil
+            perfil = TProfile(np.array(profile_data), facraster.cellsize, rid=head[5], thetaref=opt['thetaref'],
+                              chi0=chi0, reg_points=opt['reg_points'], srs=srs, mouthdist=dist0, smooth=opt['smooth'])
+            out_profiles.append(perfil)
+            # Rellenamos las posiciones procesadas con los valores de chi
+            # Y si hemos seleccionado tributaries, tambien se marcan las distancias
             n = 0
             distances = perfil.get_l(False)
             distances = distances[::-1]
@@ -455,8 +586,8 @@ class TProfile:
     ============================
     self.dem_res :: *float*
       Dem resolution of the Digital elevation model used to retreive area-elevation data
-    self.name :: *str*
-      Name of the profile
+    self.rid :: *int*
+      Indentifier of the profile
     self.thetaref :: *float*
       Value of m/n used in area-slope calculations
     self.reg_points :: *int*
@@ -483,13 +614,13 @@ class TProfile:
     =======   ==============================================
     """
 
-    def __init__(self, pf_data, dem_res=0, name="", thetaref=0.45, chi0=0, reg_points=4, srs="", mouthdist=0, smooth=0):
+    def __init__(self, pf_data, dem_res=0, rid=0, thetaref=0.45, chi0=0, reg_points=4, srs="", mouthdist=0, smooth=0):
         """
         Class that defines a river profile with morphometry capabilities.
 
         :param pf_data: *numpy array* - Array with input values
         :param dem_res: *float* - Resolution of the DEM used to extract profile features
-        :param name: *str* - Name of the profile (label)
+        :param rid: *int* - Profile Identifier
         :param thetaref: *float* - Thetaref (m/n) value used to calculate Chi and Ksn indexes
         :param chi0: *float* - Value of chi index for first point (for tributaries)
         :param reg_points: *int* - Number of points (at each side) to calculate initial slope and ksn for each vertex
@@ -511,11 +642,10 @@ class TProfile:
         """
 
         # Set profile properties
-        self._index = 0
         self._srs = srs  # EPSG Code of the Spatial Reference
         self._mouthdist = mouthdist
         self.dem_res = float(dem_res)
-        self.name = unicode(name)
+        self.rid = rid
         self.thetaref = abs(thetaref)
         self.reg_points = reg_points
         self.n_points = pf_data.shape[0]
@@ -524,6 +654,7 @@ class TProfile:
         aux_values = np.empty((pf_data.shape[0], 6))
         aux_values.fill(np.nan)
         self._data = np.append(pf_data, aux_values, axis=1)
+
         # Set raw elevations
         self._data[:, 10] = np.copy(self._data[:, 2])
 
