@@ -1058,7 +1058,7 @@ Units = "CELL"
 Use_basins = True
 Basin_shapefile = base_dir + "cuencas.shp"
 Use_heads = True
-Heads_shapefile = base_dir + "main_channels.shp"
+Heads_shapefile = base_dir + "main_heads.shp"
 Id_field = "id"
 # End debug
 

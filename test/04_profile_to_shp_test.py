@@ -28,7 +28,7 @@ def test01():
     fac = "data/darro25fac.tif"
     dem = "data/darro25.tif"
     basin = "data/cuencas.shp"
-    main_ch = "data/main_channels.shp"
+    main_ch = "data/main_heads.shp"
     umbral = 1000
     units = "CELL"
     out_point_shp = "data/04_profile_points" + ".shp"

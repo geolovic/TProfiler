@@ -255,6 +255,8 @@ def get_profiles(fac, dem, heads, basin=None, tributaries=False, **kwargs):
                 pto = ogr.Geometry(ogr.wkbPoint)
                 pto.AddPoint(next_point[0], next_point[1])
                 if not basin.Contains(pto):
+                    profile_data.append((next_point[0], next_point[1], z, distance, area))
+                    positions.append(next_pos)
                     break
 
             # Se anaden a las listas
@@ -297,13 +299,14 @@ def get_profiles(fac, dem, heads, basin=None, tributaries=False, **kwargs):
     return out_profiles
 
 
-def profiles_from_rivers(fac, dem, river_shapefile, **kwargs):
+def profiles_from_rivers(fac, dem, river_shapefile, tributaries=True, **kwargs):
     """
     This fucntion extracts profiles for all heads in heads list. It will complete river profiles until the edge of
     the dem or until the basin limits (if basin is specified).
     :param fac: str. String with the path to the flow accumulation raster
     :param dem: str. String with the path to the DEM raster
     :param river_shapefile: str. String with the path to the river shapefile
+    :param tributaries: boolean. Boolean to set whether tributaries are calculated or not
     :param kwargs: TProfile arguments for profile creation
     :return: list of TProfile objects
     """
@@ -321,19 +324,26 @@ def profiles_from_rivers(fac, dem, river_shapefile, **kwargs):
     opt['srs'] = srs
 
     # Auxiliar PRaster object to record values of Chi
-    chi_raster = p.create_from_template(dem, p.gdal.GDT_Float32, nodata=-1.0)
+    chi_raster = p.create_from_template(dem, p.gdal.GDT_Float32, nodata=0.0)
 
     # Auxiliar PRaster object to record values of distance
-    dist_raster = p.create_from_template(dem, p.gdal.GDT_Float32, nodata=0.0)
+    if tributaries:
+        dist_raster = p.create_from_template(dem, p.gdal.GDT_Float32, nodata=0.0)
 
     # Empty list to record output TProfile objects
     out_profiles = []
 
+    # Open river shapefile and get layer
     dataset = ogr.Open(river_shapefile)
     layer = dataset.GetLayer(0)
 
     # Process all the lines in river shapefile
+    id_river = 0
     for feat in layer:
+
+        # Get geometry and points
+        geom = feat.GetGeometryRef()
+        puntos = geom.GetPoints()
 
         # List to store tuples with profile data
         profile_data = []
@@ -345,8 +355,8 @@ def profiles_from_rivers(fac, dem, river_shapefile, **kwargs):
         dist0 = 0
 
         # Calculate data for the first point
-        pos = (int(head[0]), int(head[1]))
-        point = demraster.cell_2_xy(pos)
+        point = puntos[0]
+        pos = demraster.xy_2_cell(point)
         area = facraster.get_cell_value(pos)
         if area == 0:
             area = 1
@@ -359,66 +369,43 @@ def profiles_from_rivers(fac, dem, river_shapefile, **kwargs):
         # Add position to position list
         positions.append(pos)
 
-        # 'Mark' Chi raster to indicate that the pixel was processed
-        # Chi raster is marked with a value of 0, latter these 0 values will be replaced with Chi values
-        chi_raster.set_cell_value(pos, 0)
-
-        # Obtain the next point following the flow direction
-        next_pos = facraster.get_flow(pos)
-
-        # Start bucle to obtain vertexes following river's flow
-        while next_pos:
-
-            # Data of the new point
-            next_point = demraster.cell_2_xy(next_pos)
+        # Start bucle to obtain next vertexes
+        for next_point in puntos[1:]:
+            next_pos = demraster.xy_2_cell(next_point)
             z = demraster.get_cell_value(next_pos)
             area = facraster.get_cell_value(next_pos)
             distance += math.sqrt((next_point[0] - point[0]) ** 2 + (next_point[1] - point[1]) ** 2)
-
-            # Check if point is still inside basin (if specified and it is not the first head)
-            if basin and first_river:
-                pto = ogr.Geometry(ogr.wkbPoint)
-                pto.AddPoint(next_point[0], next_point[1])
-                if not basin.Contains(pto):
-                    break
 
             # Se anaden a las listas
             profile_data.append((next_point[0], next_point[1], z, distance, area))
             positions.append(next_pos)
 
-            # Se comprueba si esta "marcado";
-            # si lo esta, coge el valor de chi0 y termina el bucle
-            # sino, se marca (con un 0) y se coge el siguiente punto
-            if chi_raster.get_cell_value(next_pos) >= 0:
-                chi0 = chi_raster.get_cell_value(next_pos)
-                # Se coge tambien la distancia
-                if tributaries:
-                    dist0 = dist_raster.get_cell_value(next_pos)
-                break
-            else:
-                chi_raster.set_cell_value(pos, 0.0)
-                point = tuple(next_point)
-                pos = tuple(next_pos)
-            next_pos = facraster.get_flow(next_pos)
+            # Guardamos el punto para siguiente ejecucion del bucle
+            point = tuple(next_point)
 
-        # Para que el rio sea valido tiene que tener contener al menos cuatro pixeles
-        if len(profile_data) >= 4:
-            # Creamos el perfil
-            perfil = TProfile(np.array(profile_data), facraster.cellsize, rid=head[5], thetaref=opt['thetaref'],
-                              chi0=chi0, reg_points=opt['reg_points'], srs=srs, mouthdist=dist0, smooth=opt['smooth'])
-            out_profiles.append(perfil)
-            # Rellenamos las posiciones procesadas con los valores de chi
-            # Y si hemos seleccionado tributaries, tambien se marcan las distancias
-            n = 0
-            distances = perfil.get_l(False)
-            distances = distances[::-1]
-            chi = perfil.get_chi(True)
-            for position in positions:
-                chi_raster.set_cell_value(position, float(chi[n]))
-                if tributaries:
-                    dist_raster.set_cell_value(position, float(distances[n]))
-                n += 1
-        first_river = False
+        # Get Chi value for the last point (and distances if tributaries == True)
+        chi0 = chi_raster.get_cell_value(next_pos)
+        if tributaries:
+            dist0 = dist_raster.get_xy_value(next_point)
+
+        # Creamos el perfil
+        perfil = TProfile(np.array(profile_data), facraster.cellsize, rid=id_river, thetaref=opt['thetaref'],
+                          chi0=chi0, reg_points=opt['reg_points'], srs=srs, mouthdist=dist0, smooth=opt['smooth'])
+        out_profiles.append(perfil)
+
+        # Rellenamos las posiciones procesadas con los valores de chi
+        # Y si hemos seleccionado tributaries, tambien se marcan las distancias
+        n = 0
+        distances = perfil.get_l(False)
+        distances = distances[::-1]
+        chi = perfil.get_chi(True)
+
+        for position in positions:
+            chi_raster.set_cell_value(position, float(chi[n]))
+            dist_raster.set_cell_value(position, float(distances[n]))
+            n += 1
+        id_river += 1
+
     return out_profiles
 
 

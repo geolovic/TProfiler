@@ -194,7 +194,7 @@ Units = "CELL"
 Use_basins = True
 Basin_shapefile = "../../test/data/cuencas.shp"
 Use_heads = True
-Heads_shapefile = "../../test/data/main_channels.shp"
+Heads_shapefile = "../../test/data/main_heads.shp"
 id_field = "id"
 # End debug
 

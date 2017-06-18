@@ -33,7 +33,7 @@ def test01():
     fac = "data/darro25fac.tif"
     dem = "data/darro25.tif"
     basin = "data/cuenca_darro.shp"
-    cabeceras = "data/cabeceras.shp"
+    cabeceras = "data/cabeceras_darro.shp"
     id_field = "id"
     umbral = 1000
     units = "CELL"
@@ -90,7 +90,7 @@ def test02():
     fac = "data/darro25fac.tif"
     dem = "data/darro25.tif"
     basin = "data/cuencas.shp"
-    main_ch = "data/main_channels.shp"
+    main_ch = "data/main_heads.shp"
     id_field = "id"
     umbral = 1000
     units = "CELL"
@@ -147,7 +147,7 @@ def test03():
     fac = "data/darro25fac.tif"
     dem = "data/darro25.tif"
     basin = "data/cuencas.shp"
-    main_ch = "data/main_channels.shp"
+    main_ch = "data/main_heads.shp"
     id_field = "id"
     umbral = 1000
     units = "CELL"

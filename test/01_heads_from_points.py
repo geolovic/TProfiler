@@ -18,7 +18,7 @@ print("Test for profiler.heads_from_points()")
 def test01():
     """
     Test for profiler.heads_from_points() function
-    Intput points are in "data/in/cabeceras.shp"
+    Intput points are in "data/in/cabeceras_darro.shp"
     """
     
     inicio = time.time()
@@ -28,7 +28,7 @@ def test01():
     
     # Test parameters
     dem = "data/darro25.tif"
-    pointshp = "data/cabeceras.shp"
+    pointshp = "data/cabeceras_darro.shp"
     out_txt = "data/01_cabeceras.txt"
     id_field = "id"
     
