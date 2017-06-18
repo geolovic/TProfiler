@@ -160,6 +160,8 @@ def get_channels(fac, dem, heads, basin=None):
                 pto = ogr.Geometry(ogr.wkbPoint)
                 pto.AddPoint(next_point[0], next_point[1])
                 if not basin.Contains(pto):
+                    chandata.append((next_point[0], next_point[1], z))
+                    aux_raster.set_cell_value(next_pos, 1)
                     break
 
             # Se anaden a las listas
@@ -171,13 +173,14 @@ def get_channels(fac, dem, heads, basin=None):
             if aux_raster.get_cell_value(next_pos) == 1:
                 break
             else:
-                aux_raster.set_cell_value(pos, 1)
-                pos = tuple(next_pos)
+                aux_raster.set_cell_value(next_pos, 1)
+
             next_pos = facraster.get_flow(next_pos)
 
         if len(chandata) > 5:
             out_channels.append((int(head[5]), np.array(chandata)))
         first_river = False
+
     return out_channels
 
 

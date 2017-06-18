@@ -69,10 +69,10 @@ def main(dem, fac, use_threshold, threshold, units, use_basins, basins_shp, use_
     if use_threshold:
         heads = get_heads(fac, dem, threshold, units)
     else:
-        heads = np.array([], dtype="float32").reshape(0, 6)
+        heads = np.array([], dtype='float32').reshape(0, 6)
 
     if use_heads:
-        main_heads = heads_from_points(dem, heads_shapefile, id_field)
+        main_heads = heads_from_points(dem, heads_shapefile, str(id_field))
         heads = np.append(main_heads, heads, axis=0)
 
     if heads.shape[0] == 0:
@@ -158,6 +158,8 @@ def get_channels(fac, dem, heads, basin=None):
                 pto = ogr.Geometry(ogr.wkbPoint)
                 pto.AddPoint(next_point[0], next_point[1])
                 if not basin.Contains(pto):
+                    chandata.append((next_point[0], next_point[1], z))
+                    aux_raster.set_cell_value(next_pos, 1)
                     break
 
             # Se anaden a las listas
@@ -169,13 +171,14 @@ def get_channels(fac, dem, heads, basin=None):
             if aux_raster.get_cell_value(next_pos) == 1:
                 break
             else:
-                aux_raster.set_cell_value(pos, 1)
-                pos = tuple(next_pos)
+                aux_raster.set_cell_value(next_pos, 1)
+
             next_pos = facraster.get_flow(next_pos)
 
         if len(chandata) > 5:
             out_channels.append((int(head[5]), np.array(chandata)))
         first_river = False
+
     return out_channels
 
 
@@ -222,7 +225,7 @@ def get_heads(fac, dem, umbral, units="CELL"):
 
     # Si no hay ningun pixel que sea considerado una cabecera, devolvemos la lista vacia
     if len(heads) == 0:
-        output_heads = heads
+        output_heads = np.array(heads, dtype="float32").reshape((0, 6))
     else:
         nheads = len(heads)
         # Ordenamos las posiciones por su elevacion
@@ -267,9 +270,13 @@ def heads_from_points(dem, point_shp, id_field=""):
         n += 1
         heads.append([cell[0], cell[1], punto[0], punto[1], elev, hid])
 
-    output_heads = np.array(heads, dtype="float32")
-    ind = output_heads[:, 5].argsort()
-    output_heads = output_heads[ind]
+    # Si no hay ningun punto en el shapefile de cabeceras, devolvemos un array vacio
+    if len(heads) == 0:
+        output_heads = np.array(heads, dtype="float32").reshape((0, 6))
+    else:
+        output_heads = np.array(heads, dtype="float32")
+        ind = output_heads[:, 5].argsort()
+        output_heads = output_heads[ind]
 
     return output_heads
 
@@ -285,7 +292,7 @@ def heads_inside_basin(heads, basin, first=0):
     """
 
     if heads.shape[0] == 0:
-        return heads
+        return np.array([], dtype="float32").reshape((0, 6))
 
     basin_heads = []
     # Take only heads that are within basin polygon
@@ -295,8 +302,12 @@ def heads_inside_basin(heads, basin, first=0):
         if basin.Contains(pto):
             basin_heads.append(head)
 
-    output_heads = np.array(basin_heads, dtype="float32")
-    output_heads[:, 5] = np.arange(output_heads.shape[0]).astype("float32") + float(first)
+    if len(basin_heads) == 0:
+        output_heads =  np.array([], dtype="float32").reshape((0, 6))
+    else:
+        output_heads = np.array(basin_heads, dtype="float32")
+        output_heads[:, 5] = np.arange(output_heads.shape[0]).astype("float32") + float(first)
+
     return output_heads
 
 
@@ -1037,16 +1048,17 @@ class PRaster:
 
 
 # Debug
-DEM = "../../test/data/darro25.tif"
-Flow_accumulation = "../../test/data/darro25fac.tif"
-Output_channels = "../../test/data/out_main_ch.shp"
+base_dir = "../../test/data/"
+DEM = base_dir + "darro25.tif"
+Flow_accumulation = base_dir + "darro25fac.tif"
+Output_channels = base_dir + "out_main_ch.shp"
 Use_threshold = False
 Threshold = 1000
 Units = "CELL"
-Use_basins = False
-Basin_shapefile = "../../test/data/cuencas.shp"
+Use_basins = True
+Basin_shapefile = base_dir + "cuencas.shp"
 Use_heads = True
-Heads_shapefile = "../../test/data/main_channels.shp"
+Heads_shapefile = base_dir + "main_channels.shp"
 Id_field = "id"
 # End debug
 

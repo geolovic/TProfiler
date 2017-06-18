@@ -158,6 +158,8 @@ def get_channels(fac, dem, heads, basin=None):
                 pto = ogr.Geometry(ogr.wkbPoint)
                 pto.AddPoint(next_point[0], next_point[1])
                 if not basin.Contains(pto):
+                    chandata.append((next_point[0], next_point[1], z))
+                    aux_raster.set_cell_value(next_pos, 1)
                     break
 
             # Se anaden a las listas
@@ -169,13 +171,14 @@ def get_channels(fac, dem, heads, basin=None):
             if aux_raster.get_cell_value(next_pos) == 1:
                 break
             else:
-                aux_raster.set_cell_value(pos, 1)
-                pos = tuple(next_pos)
+                aux_raster.set_cell_value(next_pos, 1)
+
             next_pos = facraster.get_flow(next_pos)
 
         if len(chandata) > 5:
             out_channels.append((int(head[5]), np.array(chandata)))
         first_river = False
+
     return out_channels
 
 
@@ -1043,6 +1046,21 @@ class PRaster:
             raster.GetRasterBand(1).SetNoDataValue(self.nodata)
         raster.GetRasterBand(1).WriteArray(self.array)
 
+
+# Debug
+base_dir = "../test/data/"
+DEM = base_dir + "sn_test.tif"
+Flow_accumulation = base_dir + "sn_test_fac.tif"
+Output_channels = base_dir + "sn_test_out.shp"
+Use_threshold = False
+Threshold = 1000
+Units = "CELL"
+Use_basins = True
+Basin_shapefile = base_dir + "sn_basin.shp"
+Use_heads = True
+Heads_shapefile = base_dir + "sn_heads.shp"
+Id_field = "id"
+# End debug
 
 main(DEM, Flow_accumulation, Use_threshold, Threshold, Units, Use_basins, Basin_shapefile,
      Use_heads, Heads_shapefile, Id_field, Output_channels)

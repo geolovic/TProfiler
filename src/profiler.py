@@ -80,9 +80,9 @@ def get_heads(fac, dem, umbral, units="CELL"):
                 if len(np.where((vecinos >= umbral) & (vecinos < area))[0]) == 0:
                     heads.append((row, col, point[0], point[1], elev))
 
-    # Si no hay ningun pixel que sea considerado una cabecera, devolvemos la lista vacia
+    # Si no hay ningun pixel que sea considerado una cabecera, devolvemos un array vacio
     if len(heads) == 0:
-        output_heads = heads
+        output_heads = np.array(heads, dtype="float32").reshape((0, 6))
     else:
         nheads = len(heads)
         # Ordenamos las posiciones por su elevacion
@@ -127,9 +127,13 @@ def heads_from_points(dem, point_shp, id_field=""):
         n += 1
         heads.append([cell[0], cell[1], punto[0], punto[1], elev, hid])
 
-    output_heads = np.array(heads, dtype="float32")
-    ind = output_heads[:, 5].argsort()
-    output_heads = output_heads[ind]
+    # Si no hay ningun punto en el shapefile de cabeceras, devolvemos un array vacio
+    if len(heads) == 0:
+        output_heads = np.array(heads, dtype="float32").reshape((0, 6))
+    else:
+        output_heads = np.array(heads, dtype="float32")
+        ind = output_heads[:, 5].argsort()
+        output_heads = output_heads[ind]
 
     return output_heads
 
@@ -155,8 +159,12 @@ def heads_inside_basin(heads, basin, first=0):
         if basin.Contains(pto):
             basin_heads.append(head)
 
-    output_heads = np.array(basin_heads, dtype="float32")
-    output_heads[:, 5] = np.arange(output_heads.shape[0]).astype("float32") + float(first)
+    if len(basin_heads) == 0:
+        output_heads =  np.array([], dtype="float32").reshape((0, 6))
+    else:
+        output_heads = np.array(basin_heads, dtype="float32")
+        output_heads[:, 5] = np.arange(output_heads.shape[0]).astype("float32") + float(first)
+
     return output_heads
 
 
