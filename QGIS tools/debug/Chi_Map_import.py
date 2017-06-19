@@ -31,75 +31,85 @@
 #  Last modified April 08, 2017
 
 import ogr
-import profiler as p
+import numpy as np
 
-# DEM=raster
-# Flow_Accumulation=raster
-# Output_shapefile=output vector
-# Threshold=number 1000
-# Units=selection CELLS;MAP
-# Distance=number 0
-# Basins=boolean False
-# Basin_shapefile=vector
-# Main_channels=boolean False
-# Head_shapefile=vector
-# Thetaref=number 0.45
-# Regression_points=number 4
-# Smooth=number 0
+from profiler import get_heads, heads_from_points, heads_inside_basin, get_profiles, profiles_to_shp, TProfile
+
+##DEM=raster
+##Flow_accumulation=raster
+##Output_chi=output vector
+##Use_threshold=boolean True
+##Threshold=number 1000
+##Units=selection CELLS;MAP
+##Use_basins=boolean True
+##Basin_shapefile=vector
+##Use_heads=boolean True
+##Heads_shapefile=vector
+##Id_field=field Heads_shapefile
+##Thetaref=number 0.45
+##Regression_points=number 4
+##Smooth=number 0
 
 # Debug code
-DEM = "../../test/data/darro25.tif"
-Flow_Accumulation = "../../test/data/darro25fac.tif"
-Distance = 250
-Output_shapefile = "../../test/data/qgis_test_import.shp"
+basedir = "../../test/data/"
+DEM = basedir + "darro25.tif"
+Flow_Accumulation = basedir + "darro25fac.tif"
+Use_threshold = True
 Threshold = 1000
 Units = "CELL"
-Basins = True
-Basin_shapefile = "../../test/data/cuencas.shp"
-Main_channels = True
-Head_shapefile = "../../test/data/main_heads.shp"
+Use_basins = True
+Basin_shapefile = basedir + "cuencas.shp"
+Use_heads = True
+Head_shapefile = basedir + "main_heads.shp"
+Id_field = "id"
 Thetaref = 0.45
 Regression_points = 4
 Smooth = 0
+Distance = 250
+Output_chi = basedir + "out_chi_map.shp"
+# End Debug
 
 
-def main(dem, fac, distance, out_shapefile, umbral, units, basins, basin_shp, main_ch, head_shp, thetaref,
-         reg_points, smooth):
+def main(dem, fac, distance, out_shapefile, use_umbral, umbral, units, use_basins, basins_shp, use_heads, heads_shp,
+         thetaref, reg_points, smooth):
 
-    if not basins:
-        basin_shp = ""
-    if not main_ch:
-        head_shp = ""
+    # Obtenemos todas las cabeceras del DEM
+    if use_umbral:
+        heads = get_heads(fac, dem, umbral, units)
+    else:
+        heads = np.array([], dtype="float32").reshape((0, 6))
 
-    # Get all the heads of the dem and incorporate main channels if specified
-    heads = p.get_heads(fac, dem, umbral, units)
-    if main_ch:
-        main_heads = p.heads_from_points(dem, head_shp)
-        main_heads.reverse()
-        for head in main_heads:
-            heads.insert(0, head)
+    # Obtenemos los canales principales
+    if use_heads:
+        main_heads = heads_from_points(dem, heads_shp)
+    else:
+        main_heads = np.array([], dtype="float32").reshape((0, 6))
 
-    # Empty list to store output profiles
+    # Combinamos las cabeceras de la capa de puntos con las cabeceras del DEM
+    heads = np.append(main_heads, heads, axis=0)
+
+    # Lista vacia para perfiles de salida
     out_profiles = []
 
-    if basin_shp:
-        dataset = ogr.Open(basin_shp)
+    if use_basins:
+        dataset = ogr.Open(basins_shp)
         layer = dataset.GetLayer(0)
         for feat in layer:
             basin_geom = feat.GetGeometryRef()
-            basin_heads = p.heads_inside_basin(heads, basin_geom)
+            basin_heads = heads_inside_basin(heads, basin_geom)
             if len(basin_heads) > 0:
-                out_profiles.extend(p.get_profiles(fac, dem, basin_heads, basin=basin_geom, tributaries=True,
+                out_profiles.extend(get_profiles(fac, dem, basin_heads, basin=basin_geom, tributaries=True,
                                                    thetaref=thetaref, reg_points=reg_points, smooth=smooth))
     else:
-        out_profiles.extend(p.get_profiles(fac, dem, heads, tributaries=True))
+        out_profiles.extend(get_profiles(fac, dem, heads, tributaries=True, thetaref=thetaref, reg_points=reg_points,
+                                         smooth=smooth))
 
     # Store output profiles in a shapefile
     if distance > 0:
-        p.profiles_to_shp(out_shapefile, out_profiles, distance)
+        profiles_to_shp(out_shapefile, out_profiles, distance)
     else:
-        p.profiles_to_shp(out_shapefile, out_profiles)
+        profiles_to_shp(out_shapefile, out_profiles)
 
 
-main(DEM, Flow_Accumulation, Distance, Output_shapefile, Threshold, Units, Basins,
-     Basin_shapefile, Main_channels, Head_shapefile, Thetaref, Regression_points, Smooth)
+main(DEM, Flow_Accumulation, Distance, Output_chi, Use_threshold, Threshold, Units, Use_basins,
+     Basin_shapefile,Use_heads, Head_shapefile, Thetaref, Regression_points, Smooth)
