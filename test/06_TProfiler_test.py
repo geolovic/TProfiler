@@ -6,7 +6,7 @@ Granada University (Spain)
 March, 2017
 
 Testing suite for profiler.py
-Last modified: 13 March 2017
+Last modified: 19 June 2017
 """
 
 import time
@@ -14,7 +14,7 @@ import profiler as p
 import praster as pr
 import numpy as np
 import matplotlib.pyplot as plt
-print "Tests for TProfiler methods"
+print("Tests for TProfiler methods")
 
     
 def test01():
@@ -23,10 +23,10 @@ def test01():
     Test for get_x, get_y
     """
     inicio = time.time()
-    print "=" * 40
-    print "Test 01 para TProfiler"
-    print "Testing functions get_x(), get_y()"
-    print "Test in progress..."
+    print("=" * 40)
+    print("Test 01 para TProfiler")
+    print("Testing functions get_x(), get_y()")
+    print("Test in progress...")
     
     # Test parameters
     pf_data = np.load("data/darro_pfdata.npy")
@@ -54,8 +54,8 @@ def test01():
     plt.show()
 
     fin = time.time()
-    print "Test finalizado en " + str(fin - inicio) + " segundos"
-    print "=" * 40
+    print("Test finalizado en " + str(fin - inicio) + " segundos")
+    print("=" * 40)
 
 
 def test02():
@@ -64,10 +64,10 @@ def test02():
     Test for get_l, get_z
     """
     inicio = time.time()
-    print "=" * 40
-    print "Test 02 para TProfiler"
-    print "Testing functions get_l(), get_z()"
-    print "Test in progress..."
+    print("=" * 40)
+    print("Test 02 para TProfiler")
+    print("Testing functions get_l(), get_z()")
+    print("Test in progress...")
 
     # Test parameters
     pf_data = np.load("data/darro_pfdata.npy")
@@ -103,8 +103,8 @@ def test02():
     plt.show()
 
     fin = time.time()
-    print "Test finalizado en " + str(fin - inicio) + " segundos"
-    print "=" * 40
+    print("Test finalizado en " + str(fin - inicio) + " segundos")
+    print("=" * 40)
 
 
 def test03():
@@ -113,10 +113,10 @@ def test03():
     Test for raw_elevations and smooth
     """
     inicio = time.time()
-    print "=" * 40
-    print "Test 03 para TProfiler"
-    print "Testing functions smooth() and get_raw_z()"
-    print "Test in progress..."
+    print("=" * 40)
+    print("Test 03 para TProfiler")
+    print("Testing functions smooth() and get_raw_z()")
+    print("Test in progress...")
 
     # Test parameters
     pf_data = np.load("data/darro_pfdata.npy")
@@ -158,8 +158,8 @@ def test03():
     plt.show()
 
     fin = time.time()
-    print "Test finalizado en " + str(fin - inicio) + " segundos"
-    print "=" * 40
+    print("Test finalizado en " + str(fin - inicio) + " segundos")
+    print("=" * 40)
 
 
 def test04():
@@ -168,10 +168,10 @@ def test04():
     Test for get_area and get_slopes
     """
     inicio = time.time()
-    print "=" * 40
-    print "Test 04 para TProfiler"
-    print "Testing functions get_area() and get_slopes()"
-    print "Test in progress..."
+    print("=" * 40)
+    print("Test 04 para TProfiler")
+    print("Testing functions get_area() and get_slopes()")
+    print("Test in progress...")
 
     # Test parameters
     pf_data = np.load("data/darro_pfdata.npy")
@@ -218,8 +218,8 @@ def test04():
     plt.show()
 
     fin = time.time()
-    print "Test finalizado en " + str(fin - inicio) + " segundos"
-    print "=" * 40
+    print("Test finalizado en " + str(fin - inicio) + " segundos")
+    print("=" * 40)
 
 
 def test05():
@@ -228,10 +228,10 @@ def test05():
     Test for calculate slopes
     """
     inicio = time.time()
-    print "=" * 40
-    print "Test 04 para TProfiler"
-    print "Testing functions calculate slopes"
-    print "Test in progress..."
+    print("=" * 40)
+    print("Test 05 para TProfiler")
+    print("Testing functions calculate slopes")
+    print("Test in progress...")
 
     # Test parameters
     pf_data = np.load("data/darro_pfdata.npy")
@@ -270,8 +270,8 @@ def test05():
     plt.show()
 
     fin = time.time()
-    print "Test finalizado en " + str(fin - inicio) + " segundos"
-    print "=" * 40
+    print("Test finalizado en " + str(fin - inicio) + " segundos")
+    print("=" * 40)
 
 
 def test06():
@@ -280,10 +280,10 @@ def test06():
     Test for calculate_chi() and get_chi()
     """
     inicio = time.time()
-    print "=" * 40
-    print "Test 04 para TProfiler"
-    print "Testing functions get_chi() and calculate_chi()"
-    print "Test in progress..."
+    print("=" * 40)
+    print("Test 06 para TProfiler")
+    print("Testing functions get_chi() and calculate_chi()")
+    print("Test in progress...")
 
     # Test parameters
     pf_data = np.load("data/darro_pfdata.npy")
@@ -305,15 +305,15 @@ def test06():
         chi = perfil.get_chi(False, True)
         zi = perfil.get_z(False, True)
         ax.plot(chi, zi)
-        ax.set_title("Thetaref = " + str(theta))
+        ax.set_title("Thetaref = {0:.2f}".format(theta))
         theta += 0.05
 
     fig.tight_layout(pad=1)
     plt.show()
 
     fin = time.time()
-    print "Test finalizado en " + str(fin - inicio) + " segundos"
-    print "=" * 40
+    print("Test finalizado en " + str(fin - inicio) + " segundos")
+    print("=" * 40)
 
 
 def test07():
@@ -322,10 +322,10 @@ def test07():
     Test for get_ksn()
     """
     inicio = time.time()
-    print "=" * 40
-    print "Test 04 para TProfiler"
-    print "Testing function get_ksn()"
-    print "Test in progress..."
+    print("=" * 40)
+    print("Test 07 para TProfiler")
+    print("Testing function get_ksn()")
+    print("Test in progress...")
 
     # Test parameters
     pf_data = np.load("data/darro_pfdata.npy")
@@ -369,8 +369,8 @@ def test07():
     plt.show()
 
     fin = time.time()
-    print "Test finalizado en " + str(fin - inicio) + " segundos"
-    print "=" * 40
+    print("Test finalizado en " + str(fin - inicio) + " segundos")
+    print("=" * 40)
 
 
 def test08():
@@ -379,10 +379,10 @@ def test08():
     Test for calculate_ksn
     """
     inicio = time.time()
-    print "=" * 40
-    print "Test 04 para TProfiler"
-    print "Testing functions calculate_ksn()"
-    print "Test in progress..."
+    print("=" * 40)
+    print("Test 08 para TProfiler")
+    print("Testing functions calculate_ksn()")
+    print("Test in progress...")
 
     # Test parameters
     pf_data = np.load("data/darro_pfdata.npy")
@@ -417,8 +417,8 @@ def test08():
     plt.show()
 
     fin = time.time()
-    print "Test finalizado en " + str(fin - inicio) + " segundos"
-    print "=" * 40
+    print("Test finalizado en " + str(fin - inicio) + " segundos")
+    print("=" * 40)
 
 
 def test09():
@@ -427,10 +427,10 @@ def test09():
     Test for calculate_ksn
     """
     inicio = time.time()
-    print "=" * 40
-    print "Test 09 para TProfiler"
-    print "Testing ksn and SL plots"
-    print "Test in progress..."
+    print("=" * 40)
+    print("Test 09 para TProfiler")
+    print("Testing ksn and SL plots")
+    print("Test in progress...")
 
     # Test parameters
     pf_data = np.load("data/darro_pfdata.npy")
@@ -464,8 +464,8 @@ def test09():
     plt.show()
 
     fin = time.time()
-    print "Test finalizado en " + str(fin - inicio) + " segundos"
-    print "=" * 40
+    print("Test finalizado en " + str(fin - inicio) + " segundos")
+    print("=" * 40)
 
 
 test01()

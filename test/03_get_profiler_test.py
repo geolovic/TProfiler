@@ -84,7 +84,7 @@ def test02():
     # Extraemos los perfiles para esas cabeceras
     perfiles = p.get_profiles(fac, dem, cabeceras, basin, tributaries=True, thetaref=0.5, reg_points=10)
     save_profiles(perfiles, out_txt)
-    draw_profiles(perfiles)  # Desmarcar para pintar los perfiles
+    #draw_profiles(perfiles)  # Desmarcar para pintar los perfiles
 
     fin = time.time()
     print("Test finalizado en " + str(fin - inicio) + " segundos")
@@ -99,7 +99,7 @@ def test03():
     inicio = time.time()
     print("=" * 40)
     print("Test 03 para get_profiles() function")
-    print("Testing the three basins")
+    print("Testing Sierra Nevada basin")
     print("Test in progress...")
 
     # Test parameters (Sierra Nevada test)
@@ -210,6 +210,6 @@ def save_profiles(profiles, path):
     out_file.close()
 
 
-# test01()
+test01()
 test02()
-# test03()
+test03()

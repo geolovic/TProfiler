@@ -545,7 +545,7 @@ def _profiles_to_lines(path, profiles, distance):
             rslope = float(1 - resid / (sample_zi.size * sample_zi.var()))
 
             # Get the other values
-            mid_pos = p1 + ((p2 - p1) / 2)
+            mid_pos = p1 + int((p2 - p1) / 2)
             mid_chi = float(chi[mid_pos])
             mid_area = int(area[mid_pos])
             mid_l = float(li[mid_pos])
@@ -642,7 +642,8 @@ class TProfile:
         self.dem_res = float(dem_res)
         self.rid = rid
         self.thetaref = abs(thetaref)
-        self.reg_points = reg_points
+        self.slope_reg_points = reg_points
+        self.ksn_reg_points = reg_points
         self.n_points = pf_data.shape[0]
 
         # Get profile data from pf_data array
@@ -657,9 +658,9 @@ class TProfile:
         self.smooth(smooth)
 
         # Create slopes, chi and ksn values
-        self.calculate_slope(reg_points)
+        self.calculate_slope(self.slope_reg_points)
         self.calculate_chi(chi0=chi0)
-        self.calculate_ksn(reg_points)
+        self.calculate_ksn(self.ksn_reg_points)
 
     def get_projection(self):
         """
@@ -947,6 +948,7 @@ class TProfile:
         :param raw_z: bool Specifies if raw_z values are taken from calculate slopes (True) or not (False)
         :return: None
         """
+        self.slope_reg_points = reg_points
         li = self.get_l()
         if raw_z:
             zi = self.get_raw_z()
@@ -985,6 +987,7 @@ class TProfile:
         :param raw_z: bool Specifies if raw_z values are taken from calculate slopes (True) or not (False)
         :return: numpy.array with ksn values for all vertexes. If full is true, it returns a tuple of arrays (ksn, r^2)
         """
+        self.ksn_reg_points = reg_points
         ksn_values = []
         ksn_r2_values = []
         chi = self.get_chi(False)
@@ -1066,4 +1069,4 @@ class TProfile:
 
 
 def version():
-    return "Version: 4.1 - 09 May 2017"
+    return "Version: 4.2 - 19 June 2017"

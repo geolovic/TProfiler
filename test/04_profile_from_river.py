@@ -31,17 +31,7 @@ def test01():
     river_shapefile = "data/rios_darro.shp"
 
     perfiles = p.profiles_from_rivers(fac, dem, river_shapefile)
-    fig = plt.figure()
-    ax1 = fig.add_subplot(121)
-    ax2 = fig.add_subplot(122)
-    for perfil in perfiles:
-        chi = perfil.get_chi()
-        zi = perfil.get_z()
-        li = perfil.get_l(head=False)
-        zi2 = perfil.get_z(head=False)
-        ax1.plot(chi, zi)
-        ax2.plot(li, zi2)
-    plt.show()
+    draw_profiles(perfiles)
 
     fin = time.time()
     print("Test finalizado en " + str(fin - inicio) + " segundos")
@@ -54,7 +44,7 @@ def test02():
     """
     inicio = time.time()
     print("=" * 40)
-    print("Test 01 para profiles_from_rivers function")
+    print("Test 02 para profiles_from_rivers function")
     print("Extracting main rivers")
     print("Test in progress...")
 
@@ -81,6 +71,42 @@ def test02():
     fin = time.time()
     print("Test finalizado en " + str(fin - inicio) + " segundos")
     print("=" * 40)
+
+
+def draw_profiles(perfiles):
+
+    fig = plt.figure(figsize=(20, 6))
+    ax1 = fig.add_subplot(131)
+    ax2 = fig.add_subplot(132)
+    ax3 = fig.add_subplot(133)
+
+    # Get the longest profile (i.e. the first one)
+    perfil0 = perfiles.pop(0)
+    total_l = perfil0.length()
+
+    for perfil in perfiles:
+        chi = perfil.get_chi(False)
+        zi = perfil.get_z(False)
+        li = total_l - perfil.get_l(False)[::-1]
+        z = perfil.get_z(True)
+        xi = perfil.get_x()
+        yi = perfil.get_y()
+
+        ax1.plot(xi, yi, color="b")
+        ax2.plot(li, z, color="b")
+        ax3.plot(chi, zi, color="b")
+
+    chi = perfil0.get_chi(False)
+    zi = perfil0.get_z(False)
+    li = total_l - perfil0.get_l(False)[::-1]
+    z = perfil0.get_z(True)
+    xi = perfil0.get_x()
+    yi = perfil0.get_y()
+    ax1.plot(xi, yi, color="r")
+    ax2.plot(li, z, color="r")
+    ax3.plot(chi, zi, color="r")
+    plt.show()
+
 
 test01()
 test02()
