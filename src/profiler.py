@@ -299,13 +299,15 @@ def get_profiles(fac, dem, heads, basin=None, tributaries=False, **kwargs):
     return out_profiles
 
 
-def profiles_from_rivers(fac, dem, river_shapefile, tributaries=True, **kwargs):
+def profiles_from_rivers(fac, dem, river_shapefile, id_field="", name_field="", tributaries=True, **kwargs):
     """
     This fucntion extracts profiles for all heads in heads list. It will complete river profiles until the edge of
     the dem or until the basin limits (if basin is specified).
     :param fac: str. String with the path to the flow accumulation raster
     :param dem: str. String with the path to the DEM raster
     :param river_shapefile: str. String with the path to the river shapefile
+    :param id_field: str. String with the name of the field that contains indexes to order features
+    :param name_field: str. String with the name of the field that contains feature's labels
     :param tributaries: boolean. Boolean to set whether tributaries are calculated or not
     :param kwargs: TProfile arguments for profile creation
     :return: list of TProfile objects
@@ -337,9 +339,31 @@ def profiles_from_rivers(fac, dem, river_shapefile, tributaries=True, **kwargs):
     dataset = ogr.Open(river_shapefile)
     layer = dataset.GetLayer(0)
 
-    # Process all the lines in river shapefile
-    id_river = 0
+    # Get features and order them
+    layerdef = layer.GetLayerDefn()
+    fields = [layerdef.GetFieldDefn(idx).GetName() for idx in range(layerdef.GetFieldCount())]
+    n = 0
+    feat_list = []
+    idx_list = []
+
     for feat in layer:
+        if id_field in fields:
+            hid = int(feat[id_field])
+        else:
+            hid = n
+        feat_list.append(feat)
+        idx_list.append(hid)
+        n += 1
+
+    feat_array = np.array(feat_list)
+    idx_array = np.array(idx_list, dtype="int32")
+    ind = np.argsort(idx_array)
+    feat_array = feat_array[ind]
+
+    id_profile = 1
+
+    # Process all the lines in river shapefile
+    for feat in feat_array:
 
         # Get geometry and points
         geom = feat.GetGeometryRef()
@@ -350,9 +374,6 @@ def profiles_from_rivers(fac, dem, river_shapefile, tributaries=True, **kwargs):
 
         # Second list to store processed positions (to record Chi values later on)
         positions = []
-
-        chi0 = 0
-        dist0 = 0
 
         # Calculate data for the first point
         point = puntos[0]
@@ -383,13 +404,24 @@ def profiles_from_rivers(fac, dem, river_shapefile, tributaries=True, **kwargs):
             # Guardamos el punto para siguiente ejecucion del bucle
             point = tuple(next_point)
 
+        next_pos = demraster.xy_2_cell(next_point)
         # Get Chi value for the last point (and distances if tributaries == True)
         chi0 = chi_raster.get_cell_value(next_pos)
         if tributaries:
             dist0 = dist_raster.get_xy_value(next_point)
 
+        if id_field in fields:
+            rid = feat[id_field]
+        else:
+            rid = id_profile
+
+        if name_field in fields:
+            name = feat[name_field]
+        else:
+            name = str(id_profile)
+
         # Creamos el perfil
-        perfil = TProfile(np.array(profile_data), facraster.cellsize, rid=id_river, thetaref=opt['thetaref'],
+        perfil = TProfile(np.array(profile_data), facraster.cellsize, rid=rid, name=name, thetaref=opt['thetaref'],
                           chi0=chi0, reg_points=opt['reg_points'], srs=srs, mouthdist=dist0, smooth=opt['smooth'])
         out_profiles.append(perfil)
 
@@ -404,7 +436,8 @@ def profiles_from_rivers(fac, dem, river_shapefile, tributaries=True, **kwargs):
             chi_raster.set_cell_value(position, float(chi[n]))
             dist_raster.set_cell_value(position, float(distances[n]))
             n += 1
-        id_river += 1
+
+        id_profile += 1
 
     return out_profiles
 
@@ -609,7 +642,7 @@ class TProfile:
     =======   ==============================================
     """
 
-    def __init__(self, pf_data, dem_res=0, rid=0, thetaref=0.45, chi0=0, reg_points=4, srs="", mouthdist=0, smooth=0):
+    def __init__(self, pf_data, dem_res=0, rid=0, thetaref=0.45, chi0=0, reg_points=4, srs="", name="", mouthdist=0, smooth=0):
         """
         Class that defines a river profile with morphometry capabilities.
 
@@ -618,6 +651,7 @@ class TProfile:
         :param rid: *int* - Profile Identifier
         :param thetaref: *float* - Thetaref (m/n) value used to calculate Chi and Ksn indexes
         :param chi0: *float* - Value of chi index for first point (for tributaries)
+        :param name: *str* - Profile name. It will used as the profile label
         :param reg_points: *int* - Number of points (at each side) to calculate initial slope and ksn for each vertex
         :param srs: *str* - Spatial Reference system expresed as well knwon text (wkt)
         :param mouthdist: *float* - Distance from profile to the river mouth (for tributaries)
@@ -641,6 +675,10 @@ class TProfile:
         self._mouthdist = mouthdist
         self.dem_res = float(dem_res)
         self.rid = rid
+        if name == "":
+            self.name = str(rid)
+        else:
+            self.name = name
         self.thetaref = abs(thetaref)
         self.slope_reg_points = reg_points
         self.ksn_reg_points = reg_points
