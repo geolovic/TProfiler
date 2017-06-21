@@ -58,6 +58,7 @@ def main(dem, fac, river_shapefile, id_field, name_field, out_profiles):
     perfiles = np.array(perfiles)
     np.save(out_profiles, perfiles)
 
+
 # Imported modules and functions [version June 20, 2017]
 # ======================================================
 

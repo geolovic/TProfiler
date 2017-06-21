@@ -1,6 +1,6 @@
 # -*- coding: iso-8859-15 -*-
 #
-#  Chi_Map_import.py
+#  Chi_Map.py
 #
 #  Copyright (C) 2017  J. Vicente Perez, Universidad de Granada
 #
@@ -25,10 +25,10 @@
 #  18071 Granada, Spain
 #  vperez@ugr.es // geolovic@gmail.com
 
-#  Version: 1.0
-#  April 08, 2017
+#  Version: 1.1
+#  June 21, 2017
 
-#  Last modified April 08, 2017
+#  Last modified June 21, 2017
 
 import ogr
 import numpy as np
@@ -112,4 +112,4 @@ def main(dem, fac, distance, out_shapefile, use_umbral, umbral, units, use_basin
 
 
 main(DEM, Flow_Accumulation, Distance, Output_chi, Use_threshold, Threshold, Units, Use_basins,
-     Basin_shapefile,Use_heads, Head_shapefile, Thetaref, Regression_points, Smooth)
+     Basin_shapefile, Use_heads, Head_shapefile, Thetaref, Regression_points, Smooth)
