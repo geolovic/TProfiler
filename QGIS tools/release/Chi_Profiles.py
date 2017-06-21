@@ -31,7 +31,8 @@
 #  Last modified June 20, 2017
 
 import numpy as np
-import gdal, ogr
+import gdal
+import ogr
 import math
 
 ##DEM=raster
@@ -931,16 +932,6 @@ class TProfile:
                 best_theta = theta
 
         return best_theta
-
-
-# Debug
-DEM = "../../test/data/darro25.tif"
-Flow_accumulation = "../../test/data/darro25fac.tif"
-River_shapefile = "../../test/data/rios.shp"
-Id_field = "id"
-Name_field = "name"
-Output_profiles = "../../test/data/chi_profiles.npy"
-# End debug
 
 
 main(DEM, Flow_accumulation, River_shapefile, Id_field, Name_field, Output_profiles)

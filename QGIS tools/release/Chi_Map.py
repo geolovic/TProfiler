@@ -44,39 +44,20 @@ GTYPES = {1: 'uint8', 2: 'uint16', 3: 'int16', 4: 'uint32', 5: 'int32', 6: 'floa
 PROFILE_DEFAULT = {'name': "", 'thetaref': 0.45, 'chi0': 0, 'reg_points': 4, 'srs': "", 'smooth': 0}
 
 
-# #DEM=raster
-# #Flow_accumulation=raster
-# #Output_chi=output vector
-# #Use_threshold=boolean True
-# #Threshold=number 1000
-# #Units=selection CELLS;MAP
-# #Use_basins=boolean True
-# #Basin_shapefile=vector
-# #Use_heads=boolean True
-# #Heads_shapefile=vector
-# #Id_field=field Heads_shapefile
-# #Thetaref=number 0.45
-# #Regression_points=number 4
-# #Smooth=number 0
-
-# Debug code
-basedir = "../../test/data/"
-DEM = basedir + "darro25.tif"
-Flow_Accumulation = basedir + "darro25fac.tif"
-Use_threshold = True
-Threshold = 1000
-Units = "CELL"
-Use_basins = True
-Basin_shapefile = basedir + "cuencas.shp"
-Use_heads = True
-Head_shapefile = basedir + "main_heads.shp"
-Id_field = "id"
-Thetaref = 0.45
-Regression_points = 4
-Smooth = 0
-Distance = 250
-Output_chi = basedir + "out_chi_map2.shp"
-# End Debug
+##DEM=raster
+##Flow_accumulation=raster
+##Output_chi=output vector
+##Use_threshold=boolean True
+##Threshold=number 1000
+##Units=selection CELLS;MAP
+##Use_basins=boolean True
+##Basin_shapefile=vector
+##Use_heads=boolean True
+##Heads_shapefile=vector
+##Id_field=field Heads_shapefile
+##Thetaref=number 0.45
+##Regression_points=number 4
+##Smooth=number 0
 
 
 def main(dem, fac, distance, out_shapefile, use_umbral, umbral, units, use_basins, basins_shp, use_heads, heads_shp,

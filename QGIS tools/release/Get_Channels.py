@@ -1,6 +1,6 @@
 # -*- coding: iso-8859-15 -*-
 #
-#  Get_Channels.py
+#  Chi_Map_import.py
 #
 #  Copyright (C) 2017  J. Vicente Perez, Universidad de Granada
 #
@@ -26,9 +26,9 @@
 #  vperez@ugr.es // geolovic@gmail.com
 
 #  Version: 1.0
-#  June 18, 2017
+#  April 16, 2017
 
-#  Last modified June 21, 2017
+#  Last modified April 16, 2017
 
 import ogr
 import osr
@@ -55,7 +55,8 @@ NTYPES = {'int8': 3, 'int16': 3, 'int32': 5, 'int64': 5, 'uint8': 1, 'uint16': 2
 GTYPES = {1: 'uint8', 2: 'uint16', 3: 'int16', 4: 'uint32', 5: 'int32', 6: 'float32', 7: 'float64'}
 
 
-def main(dem, fac, use_threshold, threshold, units, use_basins, basins_shp, use_heads, heads_shapefile, id_field, out_channels):
+def main(dem, fac, use_threshold, threshold, units, use_basins, basins_shp, use_heads, heads_shapefile, id_field,
+         out_channels):
 
     # Create output shapefile
     driver = ogr.GetDriverByName("ESRI Shapefile")
@@ -158,6 +159,8 @@ def get_channels(fac, dem, heads, basin=None):
                 pto = ogr.Geometry(ogr.wkbPoint)
                 pto.AddPoint(next_point[0], next_point[1])
                 if not basin.Contains(pto):
+                    chandata.append((next_point[0], next_point[1], z))
+                    aux_raster.set_cell_value(next_pos, 1)
                     break
 
             # Se anaden a las listas
@@ -169,17 +172,18 @@ def get_channels(fac, dem, heads, basin=None):
             if aux_raster.get_cell_value(next_pos) == 1:
                 break
             else:
-                aux_raster.set_cell_value(pos, 1)
-                pos = tuple(next_pos)
+                aux_raster.set_cell_value(next_pos, 1)
+
             next_pos = facraster.get_flow(next_pos)
 
         if len(chandata) > 5:
             out_channels.append((int(head[5]), np.array(chandata)))
         first_river = False
+
     return out_channels
 
 
-# IMPORTED FUNCTIONS (21 June 2017)
+# IMPORTED FUNCTIONS (18 June 2017)
 def get_heads(fac, dem, umbral, units="CELL"):
     """
     Extracts heads from flow accumulation raster based in a threshold
@@ -300,7 +304,7 @@ def heads_inside_basin(heads, basin, first=0):
             basin_heads.append(head)
 
     if len(basin_heads) == 0:
-        output_heads =  np.array([], dtype="float32").reshape((0, 6))
+        output_heads = np.array([], dtype="float32").reshape((0, 6))
     else:
         output_heads = np.array(basin_heads, dtype="float32")
         output_heads[:, 5] = np.arange(output_heads.shape[0]).astype("float32") + float(first)
@@ -342,7 +346,7 @@ class TProfile:
     =======   ==============================================
     """
 
-    def __init__(self, pf_data, dem_res=0, rid=0, thetaref=0.45, chi0=0, reg_points=4, srs="", name="", mouthdist=0, smooth=0):
+    def __init__(self, pf_data, dem_res=0, rid=0, thetaref=0.45, chi0=0, reg_points=4, srs="", mouthdist=0, smooth=0):
         """
         Class that defines a river profile with morphometry capabilities.
 
@@ -351,7 +355,6 @@ class TProfile:
         :param rid: *int* - Profile Identifier
         :param thetaref: *float* - Thetaref (m/n) value used to calculate Chi and Ksn indexes
         :param chi0: *float* - Value of chi index for first point (for tributaries)
-        :param name: *str* - Profile name. It will used as the profile label
         :param reg_points: *int* - Number of points (at each side) to calculate initial slope and ksn for each vertex
         :param srs: *str* - Spatial Reference system expresed as well knwon text (wkt)
         :param mouthdist: *float* - Distance from profile to the river mouth (for tributaries)
@@ -375,13 +378,8 @@ class TProfile:
         self._mouthdist = mouthdist
         self.dem_res = float(dem_res)
         self.rid = rid
-        if name == "":
-            self.name = str(rid)
-        else:
-            self.name = name
         self.thetaref = abs(thetaref)
-        self.slope_reg_points = reg_points
-        self.ksn_reg_points = reg_points
+        self.reg_points = reg_points
         self.n_points = pf_data.shape[0]
 
         # Get profile data from pf_data array
@@ -396,9 +394,9 @@ class TProfile:
         self.smooth(smooth)
 
         # Create slopes, chi and ksn values
-        self.calculate_slope(self.slope_reg_points)
+        self.calculate_slope(reg_points)
         self.calculate_chi(chi0=chi0)
-        self.calculate_ksn(self.ksn_reg_points)
+        self.calculate_ksn(reg_points)
 
     def get_projection(self):
         """
@@ -686,7 +684,6 @@ class TProfile:
         :param raw_z: bool Specifies if raw_z values are taken from calculate slopes (True) or not (False)
         :return: None
         """
-        self.slope_reg_points = reg_points
         li = self.get_l()
         if raw_z:
             zi = self.get_raw_z()
@@ -725,7 +722,6 @@ class TProfile:
         :param raw_z: bool Specifies if raw_z values are taken from calculate slopes (True) or not (False)
         :return: numpy.array with ksn values for all vertexes. If full is true, it returns a tuple of arrays (ksn, r^2)
         """
-        self.ksn_reg_points = reg_points
         ksn_values = []
         ksn_r2_values = []
         chi = self.get_chi(False)

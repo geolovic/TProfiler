@@ -31,15 +31,16 @@
 #  Last modified June 20, 2017
 
 import numpy as np
-import gdal, ogr
+import gdal
+import ogr
 import math
 
-##DEM=raster
-##Flow_accumulation=raster
-##River_shapefile=vector
-##Id_field=field River_shapefile
-##Name_field=field River_shapefile
-##Output_profiles=output file
+# #DEM=raster
+# #Flow_accumulation=raster
+# #River_shapefile=vector
+# #Id_field=field River_shapefile
+# #Name_field=field River_shapefile
+# #Output_profiles=output file
 
 
 PROFILE_DEFAULT = {'name': "", 'thetaref': 0.45, 'chi0': 0, 'reg_points': 4, 'srs': "", 'smooth': 0}
