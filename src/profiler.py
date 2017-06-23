@@ -28,7 +28,7 @@
 #  Version: 3.0
 #  March 02, 2017
 
-#  Last modified 16 June, 2017
+#  Last modified 23 June, 2017
 
 import numpy as np
 import math
@@ -570,12 +570,18 @@ def _profiles_to_lines(path, profiles, distance):
             # Ksn by regression
             coef, resid = np.polyfit(sample_chi, sample_zi, deg=1, full=True)[:2]
             ksn = float(abs(coef[0]))
-            rksn = float(1 - resid / (sample_zi.size * sample_zi.var()))
+            if (sample_zi.size * sample_zi.var()) == 0:
+                rksn = 0.
+            else:
+                rksn = float(1 - resid / (sample_zi.size * sample_zi.var()))
 
             # Slope by regression
             coef, resid = np.polyfit(sample_li, sample_zi, deg=1, full=True)[:2]
             slope = float(abs(coef[0]))
-            rslope = float(1 - resid / (sample_zi.size * sample_zi.var()))
+            if (sample_zi.size * sample_zi.var()) == 0:
+                rslope = 0.
+            else:
+                rslope = float(1 - resid / (sample_zi.size * sample_zi.var()))
 
             # Get the other values
             mid_pos = p1 + int((p2 - p1) / 2)
@@ -1007,7 +1013,10 @@ class TProfile:
             y = sample_z
             model, resid = np.linalg.lstsq(a, y)[:2]
 
-            r2 = 1 - resid / (y.size * y.var())
+            if (y.size * y.var()) == 0:
+                r2 = 0
+            else:
+                r2 = 1 - resid / (y.size * y.var())
             gradient = model[0]
 
             self._data[n, 8] = abs(r2)
@@ -1046,7 +1055,11 @@ class TProfile:
 
             poli, sce = np.polyfit(sample_chi, sample_z, deg=1, full=True)[:2]
             gradient = poli[0]
-            r2 = 1 - sce / (sample_z.size * sample_z.var())
+
+            if (sample_z.size * sample_z.var()) == 0:
+                r2 = 0
+            else:
+                r2 = 1 - sce / (sample_z.size * sample_z.var())
 
             ksn_r2_values.append(float(abs(r2)))
 
