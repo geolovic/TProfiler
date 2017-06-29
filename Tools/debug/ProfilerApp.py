@@ -18,9 +18,17 @@ DIRS = {"left":-1, "right":1}
 
 
 class ProfilerApp:
+    """
+    Class to draw longitudinal, chi and area-slope profiles.
+    """
     gr_types = {1: 'longitudinal', 2: "area-slope", 3: "chi", 4: "ksn"}
     
     def __init__(self, figure, profiles):
+        """
+        
+        :param figure: Matplotlib.Figure to draw profiles
+        :param profiles: numpy.array with TProfiles
+        """
         self.figure = figure
         self.ax = fig.add_subplot(111)
         self.g_type = 1
@@ -195,26 +203,11 @@ class ProfilerApp:
         ax.plot(xi, yi, c="c", lw=1)
             
 
-perfiles = np.load(r"C:\Users\Vicente\PycharmProjects\TProfiler\test\data\chi_profiles.npy\chi_profiles.npy")
-
-fig = plt.figure(figsize=(8, 6))
-ax = fig.add_subplot(111)
-import matplotlib.cm as cmap
-cm = cmap.coolwarm
-
-for perfil in perfiles:
-   color = cm(perfil.rid/18)
-   chi = perfil.get_chi(head=False)
-   zi = perfil.get_z(head=False)
-   poli = np.polyfit(chi, zi, deg=1)
-   ksn = poli[0]
-   color = cm(ksn/7)
-
-   ax.plot(chi, zi, color=color, label=perfil.name)
-
-ax.legend()
-
-#pgraph = ProfilerApp(fig, perfiles)
+perfiles_path = "../../test/data/river_chi_profiles.npy"
+perfiles = np.load(perfiles_path)
+fig = plt.figure()
+pgraph = ProfilerApp(fig, perfiles)
+plt.show()
 
         
         

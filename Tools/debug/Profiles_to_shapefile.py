@@ -30,9 +30,8 @@
 
 #  Last modified June 23, 2017
 
-import ogr
 import numpy as np
-from profiler import TProfile, profiles_to_shp
+from profiler import profiles_to_shp
 
 
 # DEBUG ARGUMENTS
@@ -47,7 +46,6 @@ reg_points = 4
 
 # PROGRAM CODE
 # =============
-
 
 def main(in_profiles, out_shapefile, distance=0, reg_points=4):
 

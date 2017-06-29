@@ -28,88 +28,81 @@
 #  Version: 1.1
 #  June 21, 2017
 
-#  Last modified June 21, 2017
+#  Last modified June 23, 2017
 
 import ogr
 import numpy as np
+from profiler import get_heads, heads_from_points, heads_inside_basin, get_profiles, profiles_to_shp
 
-from profiler import get_heads, heads_from_points, heads_inside_basin, get_profiles, profiles_to_shp, TProfile
 
-##DEM=raster
-##Flow_accumulation=raster
-##Output_chi=output vector
-##Use_threshold=boolean True
-##Threshold=number 1000
-##Units=selection CELLS;MAP
-##Use_basins=boolean True
-##Basin_shapefile=vector
-##Use_heads=boolean True
-##Heads_shapefile=vector
-##Id_field=field Heads_shapefile
-##Thetaref=number 0.45
-##Regression_points=number 4
-##Smooth=number 0
+# DEBUG ARGUMENTS
+# ===============
 
-# Debug code
 basedir = "../../test/data/"
-DEM = basedir + "sn_test.tif"
-Flow_Accumulation = basedir + "sn_test_fac.tif"
-Use_threshold = True
-Threshold = 1000
-Units = "CELL"
-Use_basins = True
-Basin_shapefile = basedir + "sn_basin.shp"
-Use_heads = True
-Head_shapefile = basedir + "sn_heads.shp"
-Id_field = "id"
-Thetaref = 0.45
-Regression_points = 10
-Smooth = 0
-Distance = 0
-Output_chi = basedir + "out_chi_map2.shp"
-# End Debug
+dem = basedir + "darro25.tif"
+fac = basedir + "darro25fac.tif"
+out_chi = basedir + "out_chi_map.shp"
+out_file = basedir + "out_chi_profiles.npy"
+distance = 250
+threshold = 1000
+units = "CELL"
+basin_shp = basedir + "cuencas.shp"
+head_shp = basedir + "main_heads.shp"
+id_field = "id"
+thetaref = 0.45
+reg_points = 4
+smooth = 250
 
 
-def main(dem, fac, distance, out_shapefile, use_umbral, umbral, units, use_basins, basins_shp, use_heads, heads_shp,
-         thetaref, reg_points, smooth):
+# PROGRAM CODE
+# =============
+
+
+def main(dem, fac, out_chi, out_file, distance=0, umbral=0, units="CELL", basin_shp="", head_shp="",
+         id_field=id_field, thetaref=0.45, reg_points=4, smooth=0):
 
     # Obtenemos todas las cabeceras del DEM
-    if use_umbral:
+    if umbral:
         heads = get_heads(fac, dem, umbral, units)
     else:
         heads = np.array([], dtype="float32").reshape((0, 6))
 
     # Obtenemos los canales principales
-    if use_heads:
-        main_heads = heads_from_points(dem, heads_shp)
+    if head_shp:
+        main_heads = heads_from_points(dem, head_shp, id_field)
     else:
         main_heads = np.array([], dtype="float32").reshape((0, 6))
 
     # Combinamos las cabeceras de la capa de puntos con las cabeceras del DEM
     heads = np.append(main_heads, heads, axis=0)
+    if len(heads) == 0:
+        return
 
     # Lista vacia para perfiles de salida
     out_profiles = []
 
-    if use_basins:
-        dataset = ogr.Open(basins_shp)
+    if basin_shp:
+        dataset = ogr.Open(basin_shp)
         layer = dataset.GetLayer(0)
         for feat in layer:
             basin_geom = feat.GetGeometryRef()
             basin_heads = heads_inside_basin(heads, basin_geom)
             if len(basin_heads) > 0:
                 out_profiles.extend(get_profiles(fac, dem, basin_heads, basin=basin_geom, tributaries=True,
-                                                   thetaref=thetaref, reg_points=reg_points, smooth=smooth))
+                                                 thetaref=thetaref, reg_points=reg_points, smooth=smooth))
     else:
         out_profiles.extend(get_profiles(fac, dem, heads, tributaries=True, thetaref=thetaref, reg_points=reg_points,
                                          smooth=smooth))
 
+    # Save output profiles
+    np.save(out_file, np.array(out_profiles))
+
     # Store output profiles in a shapefile
     if distance > 0:
-        profiles_to_shp(out_shapefile, out_profiles, distance)
+        profiles_to_shp(out_chi, out_profiles, distance)
     else:
-        profiles_to_shp(out_shapefile, out_profiles)
+        profiles_to_shp(out_chi, out_profiles)
 
 
-main(DEM, Flow_Accumulation, Distance, Output_chi, Use_threshold, Threshold, Units, Use_basins,
-     Basin_shapefile, Use_heads, Head_shapefile, Thetaref, Regression_points, Smooth)
+main(dem, fac, out_chi, out_file, distance, threshold, units, basin_shp, head_shp, id_field, thetaref, reg_points,
+     smooth)

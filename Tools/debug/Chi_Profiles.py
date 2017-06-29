@@ -34,16 +34,6 @@ import numpy as np
 from profiler import profiles_from_rivers
 
 
-# Debug
-DEM = "../../test/data/darro25.tif"
-Flow_accumulation = "../../test/data/darro25fac.tif"
-River_shapefile = "../../test/data/rios.shp"
-Id_field = "id"
-Name_field = "name"
-Output_profiles = "../../test/data/chi_profiles.npy"
-# End debug
-
-
 # DEBUG ARGUMENTS
 # ===============
 
