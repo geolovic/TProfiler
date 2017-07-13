@@ -280,7 +280,7 @@ class PRaster:
         driver = gdal.GetDriverByName("GTiff")
         raster = driver.Create(path, self.XSize, self.YSize, 1, tipo)
         raster.SetGeoTransform(self.geot)
-        raster.set_projection(self.proj)
+        raster.SetProjection(self.proj)
         if self.nodata:
             raster.GetRasterBand(1).SetNoDataValue(self.nodata)
         raster.GetRasterBand(1).WriteArray(self.array)

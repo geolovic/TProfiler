@@ -34,7 +34,7 @@ import numpy as np
 from profiler import profiles_to_shp
 
 
-# DEBUG ARGUMENTS
+# ARGUMENTS
 # ===============
 
 basedir = "../../test/data/"

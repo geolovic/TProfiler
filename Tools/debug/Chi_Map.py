@@ -35,7 +35,7 @@ import numpy as np
 from profiler import get_heads, heads_from_points, heads_inside_basin, get_profiles, profiles_to_shp
 
 
-# DEBUG ARGUMENTS
+# ARGUMENTS
 # ===============
 
 basedir = "../../test/data/"

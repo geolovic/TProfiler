@@ -138,13 +138,12 @@ def heads_from_points(dem, point_shp, id_field=""):
     return output_heads
 
 
-def heads_inside_basin(heads, basin, first=0):
+def heads_inside_basin(heads, basin):
     """
     This function extracts heads that pass a threshold from a flow accumulation raster inside a determined basin
 
     :param heads: *numpy.array* -- Numpy.array with 6 columns [row, col, X, Y, Z, hid]
     :param basin: *ogr.Geometry(ogr.wkbLinearRing)* -- Polygon defining the basin
-    :param first: *int* -- Identifier for the first head, all the other will have consecutives ids
     :return: *numpy.array* -- Numpy.array with 6 columns [row, col, X, Y, Z, hid]
     """
 
@@ -160,10 +159,9 @@ def heads_inside_basin(heads, basin, first=0):
             basin_heads.append(head)
 
     if len(basin_heads) == 0:
-        output_heads =  np.array([], dtype="float32").reshape((0, 6))
+        output_heads = np.array([], dtype="float32").reshape((0, 6))
     else:
         output_heads = np.array(basin_heads, dtype="float32")
-        output_heads[:, 5] = np.arange(output_heads.shape[0]).astype("float32") + float(first)
 
     return output_heads
 
@@ -409,6 +407,8 @@ def profiles_from_rivers(fac, dem, river_shapefile, id_field="", name_field="", 
         chi0 = chi_raster.get_cell_value(next_pos)
         if tributaries:
             dist0 = dist_raster.get_xy_value(next_point)
+        else:
+            dist0 = 0
 
         if id_field in fields:
             rid = feat[id_field]
@@ -648,7 +648,8 @@ class TProfile:
     =======   ==============================================
     """
 
-    def __init__(self, pf_data, dem_res=0, rid=0, thetaref=0.45, chi0=0, reg_points=4, srs="", name="", mouthdist=0, smooth=0):
+    def __init__(self, pf_data, dem_res=0, rid=0, thetaref=0.45, chi0=0, reg_points=4, srs="", name="", mouthdist=0,
+                 smooth=0):
         """
         Class that defines a river profile with morphometry capabilities.
 
@@ -677,7 +678,7 @@ class TProfile:
         """
 
         # Set profile properties
-        self._srs = srs  # EPSG Code of the Spatial Reference
+        self._srs = srs  # WKT with the Spatial Reference
         self._mouthdist = mouthdist
         self.dem_res = float(dem_res)
         self.rid = rid

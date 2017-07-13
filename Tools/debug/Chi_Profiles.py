@@ -34,7 +34,7 @@ import numpy as np
 from profiler import profiles_from_rivers
 
 
-# DEBUG ARGUMENTS
+# ARGUMENTS
 # ===============
 
 basedir = "../../test/data/"

@@ -38,7 +38,7 @@ from profiler import get_heads, heads_from_points, heads_inside_basin
 from praster import open_raster, create_from_template
 
 
-# DEBUG ARGUMENTS
+# ARGUMENTS
 # ===============
 
 basedir = "../../test/data/"
@@ -79,6 +79,7 @@ def main(dem, fac, out_channels, threshold, units, basin_shp, head_shapefile, id
 
     if head_shapefile:
         main_heads = heads_from_points(dem, head_shapefile, id_field)
+        heads[:, 5] += main_heads.shape[0]
         heads = np.append(main_heads, heads, axis=0)
 
     if heads.shape[0] == 0:
