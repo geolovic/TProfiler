@@ -42,7 +42,7 @@ PROFILE_DEFAULT = {'name': "", 'thetaref': 0.45, 'chi0': 0, 'reg_points': 4, 'sr
 
 def get_heads(fac, dem, umbral, units="CELL"):
     """
-    Extracts heads from flow accumulation raster based in a threshold
+    Extracts heads from flow accumulation raster within a threshold. Heads will be ordered by their elevation.
 
     :param fac: *str* -- Path to the flow acculumation raster
     :param dem: *str* -- Path to the DEM
@@ -100,7 +100,7 @@ def get_heads(fac, dem, umbral, units="CELL"):
 
 def heads_from_points(dem, point_shp, id_field=""):
     """
-    This function creates a list of tuples (row, col, X, Y, Z, "id") from a point shapefile
+    Converts points from a shapefile into heads of the form [row, col, X, Y, Z, id]
 
     :param dem: *str* -- Path to the DEM
     :param point_shp: *str* -- Path to the point shapefile
@@ -168,13 +168,13 @@ def heads_inside_basin(heads, basin):
 
 def get_profiles(fac, dem, heads, basin=None, tributaries=False, **kwargs):
     """
-    This fucntion extracts profiles for all heads in heads list. It will complete river profiles until the edge of
-    the dem or until the basin limits (if basin is specified).
-    :param fac: str. String with the path to the flow accumulation raster
-    :param dem: str. String with the path to the DEM raster
-    :param heads: List of tuples (row, col, X, Y, Z, hid)
-    :param basin: ogr.Geometry Polygon that represents one basin
-    :param tributaries: Boolean Flag to specify if mouth distances will be calculated
+    Extracts profiles for all heads of a numpy array. It will complete river profiles until the edge of the DEM or
+    within the basin limits
+    :param fac: str - String with the path to the flow accumulation raster
+    :param dem: str - String with the path to the DEM raster
+    :param heads: numpy.array - Numpy.array with 6 columns [row, col, X, Y, Z, hid]
+    :param basin: ogr.Geometry - Polygon that represents one basin
+    :param tributaries: bool - Boolean Flag to specify if mouth distances will be calculated
     :param kwargs: TProfile arguments for profile creation
     :return: list of TProfile objects
     """
@@ -299,14 +299,13 @@ def get_profiles(fac, dem, heads, basin=None, tributaries=False, **kwargs):
 
 def profiles_from_rivers(fac, dem, river_shapefile, id_field="", name_field="", tributaries=True, **kwargs):
     """
-    This fucntion extracts profiles for all heads in heads list. It will complete river profiles until the edge of
-    the dem or until the basin limits (if basin is specified).
-    :param fac: str. String with the path to the flow accumulation raster
-    :param dem: str. String with the path to the DEM raster
-    :param river_shapefile: str. String with the path to the river shapefile
-    :param id_field: str. String with the name of the field that contains indexes to order features
-    :param name_field: str. String with the name of the field that contains feature's labels
-    :param tributaries: boolean. Boolean to set whether tributaries are calculated or not
+    Extracts profiles for rivers from a line shapefile. Rivers should have vertexes in all pixels from the original DEM
+    :param fac: str - String with the path to the flow accumulation raster
+    :param dem: str - String with the path to the DEM raster
+    :param river_shapefile: str - String with the path to the river shapefile
+    :param id_field: str - String with the name of the field that contains indexes to order features
+    :param name_field: str - String with the name of the field that contains feature's labels
+    :param tributaries: bool - Boolean to set whether tributaries are calculated or not
     :param kwargs: TProfile arguments for profile creation
     :return: list of TProfile objects
     """
@@ -444,11 +443,11 @@ def profiles_from_rivers(fac, dem, river_shapefile, id_field="", name_field="", 
 
 def profiles_to_shp(path, profiles, distance=0):
     """
-    This function save a list of profiles in a shapefile (point or line shapefile, depending of the distance param)
+    This function saves a list of profiles in a shapefile (point or line shapefile, depending of the distance parameter)
 
     :param path: str - Full path to the shapefile
     :param profiles: list - List of TProfile objects
-    :param distance: float - Distance for the profile segments. If distance = 0, the shapefile will be a point shp
+    :param distance: float - Distance for profile segments. If distance = 0, the output shapefile will be a point shp
     :return: None
     """
     if distance == 0:

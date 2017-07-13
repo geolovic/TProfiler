@@ -29,8 +29,8 @@ def test01():
     print("Test in progress...")
     
     # Test parameters
-    pf_data = np.load("data/darro_pfdata.npy")
-    dem = "data/darro25.tif"
+    pf_data = np.load("data/in/darro_pfdata.npy")
+    dem = "data/in/darro25.tif"
     demraster = pr.open_raster(dem)
     srs = demraster.proj
     cellsize = demraster.cellsize
@@ -70,8 +70,8 @@ def test02():
     print("Test in progress...")
 
     # Test parameters
-    pf_data = np.load("data/darro_pfdata.npy")
-    dem = "data/darro25.tif"
+    pf_data = np.load("data/in/darro_pfdata.npy")
+    dem = "data/in/darro25.tif"
     demraster = pr.open_raster(dem)
     srs = demraster.proj
     cellsize = demraster.cellsize
@@ -119,8 +119,8 @@ def test03():
     print("Test in progress...")
 
     # Test parameters
-    pf_data = np.load("data/darro_pfdata.npy")
-    dem = "data/darro25.tif"
+    pf_data = np.load("data/in/darro_pfdata.npy")
+    dem = "data/in/darro25.tif"
     demraster = pr.open_raster(dem)
     srs = demraster.proj
     cellsize = demraster.cellsize
@@ -174,8 +174,8 @@ def test04():
     print("Test in progress...")
 
     # Test parameters
-    pf_data = np.load("data/darro_pfdata.npy")
-    dem = "data/darro25.tif"
+    pf_data = np.load("data/in/darro_pfdata.npy")
+    dem = "data/in/darro25.tif"
     demraster = pr.open_raster(dem)
     srs = demraster.proj
     cellsize = demraster.cellsize
@@ -234,8 +234,8 @@ def test05():
     print("Test in progress...")
 
     # Test parameters
-    pf_data = np.load("data/darro_pfdata.npy")
-    dem = "data/darro25.tif"
+    pf_data = np.load("data/in/darro_pfdata.npy")
+    dem = "data/in/darro25.tif"
     demraster = pr.open_raster(dem)
     srs = demraster.proj
     cellsize = demraster.cellsize
@@ -286,8 +286,8 @@ def test06():
     print("Test in progress...")
 
     # Test parameters
-    pf_data = np.load("data/darro_pfdata.npy")
-    dem = "data/darro25.tif"
+    pf_data = np.load("data/in/darro_pfdata.npy")
+    dem = "data/in/darro25.tif"
     demraster = pr.open_raster(dem)
     srs = demraster.proj
     cellsize = demraster.cellsize
@@ -328,8 +328,8 @@ def test07():
     print("Test in progress...")
 
     # Test parameters
-    pf_data = np.load("data/darro_pfdata.npy")
-    dem = "data/darro25.tif"
+    pf_data = np.load("data/in/darro_pfdata.npy")
+    dem = "data/in/darro25.tif"
     demraster = pr.open_raster(dem)
     srs = demraster.proj
     cellsize = demraster.cellsize
@@ -385,8 +385,8 @@ def test08():
     print("Test in progress...")
 
     # Test parameters
-    pf_data = np.load("data/darro_pfdata.npy")
-    dem = "data/darro25.tif"
+    pf_data = np.load("data/in/darro_pfdata.npy")
+    dem = "data/in/darro25.tif"
     demraster = pr.open_raster(dem)
     srs = demraster.proj
     cellsize = demraster.cellsize
@@ -433,8 +433,8 @@ def test09():
     print("Test in progress...")
 
     # Test parameters
-    pf_data = np.load("data/darro_pfdata.npy")
-    dem = "data/darro25.tif"
+    pf_data = np.load("data/in/darro_pfdata.npy")
+    dem = "data/in/darro25.tif"
     demraster = pr.open_raster(dem)
     srs = demraster.proj
     cellsize = demraster.cellsize

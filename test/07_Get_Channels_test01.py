@@ -1,52 +1,17 @@
-# -*- coding: iso-8859-15 -*-
-#
-#  Chi_Map_import.py
-#
-#  Copyright (C) 2017  J. Vicente Perez, Universidad de Granada
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  (at your option) any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License
-#  along with this program; if not, write to the Free Software
-#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-#  MA 02110-1301, USA.
+# -*- coding: utf-8 -*-
+"""
 
-#  For additional information, contact to:
-#  Jose Vicente Perez Pena
-#  Dpto. Geodinamica-Universidad de Granada
-#  18071 Granada, Spain
-#  vperez@ugr.es // geolovic@gmail.com
+José Vicente Pérez
+Granada University (Spain)
+July, 2017
 
-#  Version: 1.0
-#  April 16, 2017
-
-#  Last modified April 16, 2017
-
+Testing suite for get_channels.py
+Last modified: 13 July 2017
+"""
 import ogr
 import osr
 import gdal
 import numpy as np
-
-
-##DEM=raster
-##Flow_accumulation=raster
-##Output_channels=output vector
-##Use_threshold=boolean True
-##Threshold=number 1000
-##Units=selection CELLS;MAP
-##Use_basins=boolean True
-##Basin_shapefile=vector
-##Use_heads=boolean True
-##Heads_shapefile=vector
-##Id_field=field Heads_shapefile
 
 
 NTYPES = {'int8': 3, 'int16': 3, 'int32': 5, 'int64': 5, 'uint8': 1, 'uint16': 2,
@@ -55,7 +20,8 @@ NTYPES = {'int8': 3, 'int16': 3, 'int32': 5, 'int64': 5, 'uint8': 1, 'uint16': 2
 GTYPES = {1: 'uint8', 2: 'uint16', 3: 'int16', 4: 'uint32', 5: 'int32', 6: 'float32', 7: 'float64'}
 
 
-def main(dem, fac, use_threshold, threshold, units, use_basins, basins_shp, use_heads, heads_shapefile, id_field, out_channels):
+def main(dem, fac, use_threshold, threshold, units, use_basins, basins_shp, use_heads, heads_shapefile, id_field,
+         out_channels):
 
     # Create output shapefile
     driver = ogr.GetDriverByName("ESRI Shapefile")
@@ -303,7 +269,7 @@ def heads_inside_basin(heads, basin, first=0):
             basin_heads.append(head)
 
     if len(basin_heads) == 0:
-        output_heads =  np.array([], dtype="float32").reshape((0, 6))
+        output_heads = np.array([], dtype="float32").reshape((0, 6))
     else:
         output_heads = np.array(basin_heads, dtype="float32")
         output_heads[:, 5] = np.arange(output_heads.shape[0]).astype("float32") + float(first)
@@ -991,14 +957,14 @@ class PRaster:
         vec_adyacentes = [(-1, 0), (0, -1), (0, 1), (1, 0)]
         vec_diagonales = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
 
-        # Suponemos que el valor m�ximo es el mismo
+        # Suponemos que el valor máximo es el mismo
         cell_value = self.get_cell_value(cell)
 
         max_value = cell_value
         max_pos = cell
 
         # La celda a la que va el flujo no tiene porque ser la de mayor valor de flow accumulation
-        # En el caso de que el flujo haga una L la m�xima es la diagonal, pero el flujo va a la adyacente
+        # En el caso de que el flujo haga una L la máxima es la diagonal, pero el flujo va a la adyacente
         # Por ello primero se comprueban las celdas adyacentes y luego las diagonales
 
         for n in vec_adyacentes:

@@ -108,8 +108,8 @@ class ProfilerApp:
         """
         self.ax.clear()
         perfil = self.profiles[self.active]
-        chi = perfil.get_chi(head=False)
-        zi = perfil.get_z(head=False)
+        chi = perfil.get_chi()
+        zi = perfil.get_z()
         self.ax.set_xlabel("Chi [m]")
         self.ax.set_ylabel("Elevation [m]")
         self.ax.set_title(perfil.name)
@@ -118,10 +118,10 @@ class ProfilerApp:
         # Draw regressions
         for r in self.regressions[self.active]:
             self.ax.plot(r[4][:, 0], r[4][:, 1], c="r", ls="--", lw=1)
-            p1x = self.profiles[self.active].get_chi(head=False)[r[0]]
-            p1y = self.profiles[self.active].get_z(head=False)[r[0]]
-            p2x = self.profiles[self.active].get_chi(head=False)[r[1]]
-            p2y = self.profiles[self.active].get_z(head=False)[r[1]]
+            p1x = self.profiles[self.active].get_chi()[r[0]]
+            p1y = self.profiles[self.active].get_z()[r[0]]
+            p2x = self.profiles[self.active].get_chi()[r[1]]
+            p2y = self.profiles[self.active].get_z()[r[1]]
             self.ax.plot([p1x, p2x], [p1y, p2y], "k+")
 
         # Draw knickpoints
@@ -134,8 +134,8 @@ class ProfilerApp:
         """
         self.ax.clear()
         perfil = self.profiles[self.active]
-        ksn = perfil.get_ksn(head=False)
-        li = perfil.get_l(head=False) / 1000.
+        ksn = perfil.get_ksn()
+        li = perfil.get_l() / 1000.
         self.ax.set_xlabel("Distance [km]")
         self.ax.set_ylabel("Ksn (reg. points: {0})".format(perfil.ksn_reg_points))
         self.ax.set_title(perfil.name)
@@ -173,8 +173,8 @@ class ProfilerApp:
         # If we are in regression mode, append one point to self.reg_points
         if self.mode == "R" and self.g_type == 3:
             self.reg_points.append(ind)
-            chi = self.profiles[self.active].get_chi(head=False)[ind]
-            zi = self.profiles[self.active].get_z(head=False)[ind]
+            chi = self.profiles[self.active].get_chi()[ind]
+            zi = self.profiles[self.active].get_z()[ind]
             self.ax.plot(chi, zi, "k+")
             self.figure.canvas.draw()
             self.create_regression()
@@ -196,21 +196,23 @@ class ProfilerApp:
         perfil = self.profiles[self.active]
         
         # Regression in chi plot
-        chi = perfil.get_chi(head=False)[p1:p2+1]
-        zi = perfil.get_z(head=False)[p1:p2+1]
+        chi = perfil.get_chi()[p1:p2+1]
+        zi = perfil.get_z()[p1:p2+1]
        
         poli = np.polyfit(chi, zi, deg=1)
         xc = np.linspace(chi[0], chi[-1], num=5)
         yc = np.polyval(poli, xc)
         arr = np.array((xc, yc)).T
-        print("regression", p1, p2)
         self.regressions[self.active].append((p1, p2, poli[0], poli[1], arr))
         # Once the regression is created, force redraw and clear reg_point list
         self.reg_points = []
         self.draw()
         
     def key_input(self, event):
-
+        """
+        Controls keyboard events to add functionality
+        :param event: keypress event
+        """
         if event.key in ["1", "2", "3", "4"]:
             self.g_type = int(event.key)
             self.draw()
@@ -261,7 +263,6 @@ class ProfilerApp:
                 return
             perfil.calculate_slope(reg_points)
             self.draw()
-
 
         if event.key.lower() == "m":
             self.draw_map()
@@ -316,8 +317,8 @@ class ProfilerApp:
 
         for idx, perfil in enumerate(self.profiles):
             for reg in self.regressions[idx]:
-                xi = perfil.get_x(head=False)[reg[0]:reg[1]]
-                yi = perfil.get_y(head=False)[reg[0]:reg[1]]
+                xi = perfil.get_x()[reg[0]:reg[1]]
+                yi = perfil.get_y()[reg[0]:reg[1]]
                 feat = ogr.Feature(layer.GetLayerDefn())
                 feat.SetField("ksn", reg[2])
 
@@ -331,7 +332,8 @@ class ProfilerApp:
         # Save knickpoints
         if os.path.exists(out_knicks):
             dataset = driver.Open(out_knicks, 1)
-            dataset.DeleteLayer(0)
+            for n in range(dataset.GetLayerCount()):
+                dataset.DeleteLayer(n)
             layer = dataset.CreateLayer("knickpoints", sp, ogr.wkbPoint)
         else:
             dataset = driver.CreateDataSource(out_knicks)
@@ -339,8 +341,8 @@ class ProfilerApp:
 
         for idx, perfil in enumerate(self.knick_points):
             for kp in self.knick_points[idx]:
-                xi = perfil.get_x(head=False)[kp]
-                yi = perfil.get_y(head=False)[kp]
+                xi = perfil.get_x()[kp]
+                yi = perfil.get_y()[kp]
                 feat = ogr.Feature(layer.GetLayerDefn())
 
                 # Creamos geometria

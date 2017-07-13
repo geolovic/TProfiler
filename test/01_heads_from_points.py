@@ -27,9 +27,9 @@ def test01():
     print("Test in progress...")
     
     # Test parameters
-    dem = "data/darro25.tif"
-    pointshp = "data/cabeceras_darro.shp"
-    out_txt = "data/01_cabeceras.txt"
+    dem = "data/in/darro25.tif"
+    pointshp = "data/in/cabeceras_darro.shp"
+    out_txt = "data/out/01_cabeceras_darro.txt"
     id_field = "id"
     
     cabeceras = p.heads_from_points(dem, pointshp, id_field)

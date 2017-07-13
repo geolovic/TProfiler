@@ -28,11 +28,11 @@ def test01():
     print("Test in progress...")
 
     # Test parameters
-    fac = "data/darro25fac.tif"
-    dem = "data/darro25.tif"
+    fac = "data/in/darro25fac.tif"
+    dem = "data/in/darro25.tif"
     umbral = 1000
     units = "CELL"
-    out_txt = "data/00_heads" + str(umbral) + units + ".txt"
+    out_txt = "data/out/00_heads" + str(umbral) + units + ".txt"
 
     cabeceras = p.get_heads(fac, dem, umbral, units)
     outfile = open(out_txt, "w")
@@ -63,11 +63,11 @@ def test02():
     print("Test in progress...")
 
     # Test parameters
-    fac = "data/darro25fac.tif"
-    dem = "data/darro25.tif"
+    fac = "data/in/darro25fac.tif"
+    dem = "data/in/darro25.tif"
     umbral = 625000
     units = "MAP"
-    out_txt = "data/00_heads" + str(umbral) + units + ".txt"
+    out_txt = "data/out/00_heads" + str(umbral) + units + ".txt"
 
     cabeceras = p.get_heads(fac, dem, umbral, units)
     outfile = open(out_txt, "w")

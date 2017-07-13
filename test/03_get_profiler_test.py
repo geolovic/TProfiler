@@ -26,15 +26,16 @@ def test01():
     print("Test in progress...")
     
     # Test parameters
-    fac = "data/darro25fac.tif"
-    dem = "data/darro25.tif"
+    fac = "data/in/darro25fac.tif"
+    dem = "data/in/darro25.tif"
     umbral = 1000
     units = "CELL"
-    out_txt = "data/03_get_profiles_test01.txt"
+    out_txt = "data/out/03_get_profiles_test01.txt"
 
     cabeceras = p.get_heads(fac, dem, umbral, units=units)
     perfiles = p.get_profiles(fac, dem, cabeceras, tributaries=True)
     save_profiles(perfiles, out_txt)
+    # draw_profiles(perfiles)  # Desmarcar para pintar los perfiles
     
     fin = time.time()
     print("Test finalizado en " + str(fin - inicio) + " segundos")
@@ -54,14 +55,14 @@ def test02():
     print("Test in progress...")
 
     # Test parameters
-    fac = "data/darro25fac.tif"
-    dem = "data/darro25.tif"
-    input_basin_shp = "data/cuenca_darro.shp"
-    darro_main_ch = "data/darro_head.shp"
+    fac = "data/in/darro25fac.tif"
+    dem = "data/in/darro25.tif"
+    input_basin_shp = "data/in/cuenca_darro.shp"
+    darro_main_ch = "data/in/darro_head.shp"
     id_field = "id"
     umbral = 1000
     units = "CELL"
-    out_txt = "data/03_get_profiles_test02.txt"
+    out_txt = "data/out/03_get_profiles_test02.txt"
 
     # Get input basin geometry
     dataset = ogr.Open(input_basin_shp)
@@ -84,7 +85,7 @@ def test02():
     # Extraemos los perfiles para esas cabeceras
     perfiles = p.get_profiles(fac, dem, cabeceras, basin, tributaries=True, thetaref=0.5, reg_points=10)
     save_profiles(perfiles, out_txt)
-    #draw_profiles(perfiles)  # Desmarcar para pintar los perfiles
+    # draw_profiles(perfiles)  # Desmarcar para pintar los perfiles
 
     fin = time.time()
     print("Test finalizado en " + str(fin - inicio) + " segundos")
@@ -103,13 +104,13 @@ def test03():
     print("Test in progress...")
 
     # Test parameters (Sierra Nevada test)
-    fac = "data/sn_test_fac.tif"
-    dem = "data/sn_test.tif"
-    basin = "data/sn_basin.shp"
-    main_ch = "data/sn_heads.shp"
+    fac = "data/in/sn_test_fac.tif"
+    dem = "data/in/sn_test.tif"
+    basin = "data/in/sn_basin.shp"
+    main_ch = "data/in/sn_heads.shp"
     umbral = 1000
     units = "CELL"
-    out_txt = "data/03_get_profiles_testSN" + ".txt"
+    out_txt = "data/out/03_get_profiles_testSN" + ".txt"
 
     # Obtenemos todas las cabeceras del DEM
     heads = p.get_heads(fac, dem, umbral, units)
@@ -130,14 +131,14 @@ def test03():
         # Obtenemos poligono de la cuenca
         basin = feat.GetGeometryRef()
         # Obtenemos las cabeceras de dentro de la cuenca
-        basin_heads = p.heads_inside_basin(heads, basin, n_perfiles)
+        basin_heads = p.heads_inside_basin(heads, basin)
         n_perfiles += basin_heads.shape[0]
         # Creamos los perfiles
         basin_profiles = p.get_profiles(fac, dem, basin_heads, basin, tributaries=True)
         perfiles.extend(basin_profiles)
 
     save_profiles(perfiles, out_txt)
-    draw_profiles(perfiles)  # Desmarcar para pintar los perfiles
+    # draw_profiles(perfiles)  # Desmarcar para pintar los perfiles
     fin = time.time()
     print("Test finalizado en " + str(fin - inicio) + " segundos")
     print("=" * 40)

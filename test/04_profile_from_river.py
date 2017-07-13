@@ -18,6 +18,7 @@ print("Tests for profiler.profiles_from_rivers()")
 def test01():
     """
     Test for profiles_from_rivers() function
+    Darro river with tributaries
     """
     inicio = time.time()
     print("=" * 40)
@@ -26,9 +27,9 @@ def test01():
     print("Test in progress...")
     
     # Test parameters
-    fac = "data/darro25fac.tif"
-    dem = "data/darro25.tif"
-    river_shapefile = "data/rios_darro.shp"
+    fac = "data/in/darro25fac.tif"
+    dem = "data/in/darro25.tif"
+    river_shapefile = "data/in/rios_darro.shp"
     id_field = "id"
     name_field = "name"
 
@@ -51,10 +52,9 @@ def test02():
     print("Test in progress...")
 
     # Test parameters
-    fac = "data/darro25fac.tif"
-    dem = "data/darro25.tif"
-    river_shapefile = "data/rios.shp"
-    id_field = "id"
+    fac = "data/in/darro25fac.tif"
+    dem = "data/in/darro25.tif"
+    river_shapefile = "data/in/rios.shp"
     name_field = "name"
     thetaref = 0.35
 
