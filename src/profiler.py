@@ -35,6 +35,7 @@ import math
 import praster as p
 import ogr
 import osr
+import gdal
 
 
 PROFILE_DEFAULT = {'name': "", 'thetaref': 0.45, 'chi0': 0, 'reg_points': 4, 'srs': "", 'smooth': 0}
@@ -611,6 +612,85 @@ def _profiles_to_lines(path, profiles, distance):
             p2 = p1 + dx
 
         id_perfil += 1
+
+
+def get_channels(fac, dem, heads, basin=None):
+    """
+    This function extracts profiles for all heads. It will complete river profiles until the edge of the dem or until
+    basin limits.
+    the dem or until the basin limits (if basin is specified).
+    :param fac: PRaster Raster with the flow accumulation
+    :param dem: PRaster Raster with the Digital Elevation Model
+    :param heads: List of tuples (row, col, X, Y, Z, "id")
+    :param basin: ogr.Geometry Polygon that represents one basin
+    :return: list of arrays representing channels (3 columns: x, y, z)
+    """
+
+    # Get facraster and demrasters as pRaster objects
+    facraster = p.open_raster(fac)
+    demraster = p.open_raster(dem)
+
+    # Auxiliar PRaster object to record proccesed cells
+    aux_raster = p.create_from_template(dem, gdal.GDT_Byte, nodata=0)
+
+    # If all the heads come from the same basin, all of them will flow into first river
+    # there is no need to check if all vertexes are inside the basin, from the second head all will be inside
+    first_river = True
+
+    out_channels = []
+    # Process all the heads
+    for head in heads:
+        # List to store xyz tuples with channel data
+        chandata = []
+
+        # Calculate data for the first point
+        pos = (int(head[0]), int(head[1]))
+        point = demraster.cell_2_xy(pos)
+        z = demraster.get_cell_value(pos)
+
+        # Add first point to profile data (xyz)
+        chandata.append((point[0], point[1], z))
+
+        # 'Mark' aux raster to indicate that the pixel was processed
+        aux_raster.set_cell_value(pos, 1)
+
+        # Obtain the next point following the flow direction
+        next_pos = facraster.get_flow(pos)
+
+        # Start bucle to obtain vertexes following river's flow
+        while next_pos:
+
+            # Data of the new point
+            next_point = demraster.cell_2_xy(next_pos)
+            z = demraster.get_cell_value(next_pos)
+
+            # Check if point is still inside basin (if specified and it is not the first head)
+            if basin and first_river:
+                pto = ogr.Geometry(ogr.wkbPoint)
+                pto.AddPoint(next_point[0], next_point[1])
+                if not basin.Contains(pto):
+                    chandata.append((next_point[0], next_point[1], z))
+                    aux_raster.set_cell_value(next_pos, 1)
+                    break
+
+            # Se anaden a las listas
+            chandata.append((next_point[0], next_point[1], z))
+
+            # Se comprueba si esta "marcado";
+            # si lo esta, coge el valor de chi0 y termina el bucle
+            # sino, se marca (con un 1) y se coge el siguiente punto
+            if aux_raster.get_cell_value(next_pos) == 1:
+                break
+            else:
+                aux_raster.set_cell_value(next_pos, 1)
+
+            next_pos = facraster.get_flow(next_pos)
+
+        if len(chandata) > 5:
+            out_channels.append((int(head[5]), np.array(chandata)))
+        first_river = False
+
+    return out_channels
 
 
 class TProfile:

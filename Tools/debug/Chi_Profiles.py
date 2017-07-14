@@ -31,26 +31,27 @@
 #  Last modified June 23, 2017
 
 import numpy as np
-from profiler import profiles_from_rivers
+import profiler as p
 
 
 # ARGUMENTS
 # ===============
 
-basedir = "../../test/data/"
-dem = basedir + "darro25.tif"
-fac = basedir + "darro25fac.tif"
-river_shp = basedir + "rios.shp"
-id_field = "id"
+dem = "srtm30.tif"
+fac = "srtm30_fac.tif"
+river_shp = "rios_principales"
+id_field = "river_id"
 name_field = "name"
-out_file = basedir + "river_chi_profiles.npy"
+out_file = "rios_rif.npy"
 thetaref = 0.45
 reg_points = 4
-smooth = 250
+smooth = 0
 
 # PROGRAM CODE
 # =============
 
+import os
+print(os.getcwd())
 
 NTYPES = {'int8': 3, 'int16': 3, 'int32': 5, 'int64': 5, 'uint8': 1, 'uint16': 2,
           'uint32': 4, 'uint64': 4, 'float16': 6, 'float32': 6, 'float64': 7}
@@ -61,7 +62,7 @@ GTYPES = {1: 'uint8', 2: 'uint16', 3: 'int16', 4: 'uint32', 5: 'int32', 6: 'floa
 def main(dem, fac, river_shp, out_file, id_field="", name_field="", thetaref=thetaref, reg_points=reg_points,
          smooth=smooth):
     # Extract profiles
-    perfiles = profiles_from_rivers(fac, dem, river_shp, id_field=id_field, name_field=name_field, thetaref=thetaref,
+    perfiles = p.profiles_from_rivers(fac, dem, river_shp, id_field=id_field, name_field=name_field, thetaref=thetaref,
                                     reg_points=reg_points, smooth=smooth)
     # Save profiles into
     perfiles = np.array(perfiles)
