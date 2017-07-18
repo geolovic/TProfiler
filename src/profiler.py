@@ -36,6 +36,7 @@ import praster as p
 import ogr
 import osr
 import gdal
+import os
 
 
 PROFILE_DEFAULT = {'name': "", 'thetaref': 0.45, 'chi0': 0, 'reg_points': 4, 'srs': "", 'smooth': 0}
@@ -457,17 +458,22 @@ def profiles_to_shp(path, profiles, distance=0):
         _profiles_to_lines(path, profiles, distance)
 
 
-def _profiles_to_points(path, profiles):
+def _profiles_to_points(out_shp, profiles):
     """
     This function save a list of profiles in a point shapefile
 
-    :param path: str - Full path to the shapefile
+    :param out_shp: str - Full path to the shapefile
     :param profiles: list - List of TProfile objects
     :return: None
     """
-    # Creates point shapefle
+    # Create point shapefle
     driver = ogr.GetDriverByName("ESRI Shapefile")
-    dataset = driver.CreateDataSource(path)
+    if os.path.exists(out_shp):
+        dataset = driver.Open(out_shp, 1)
+        for n in range(dataset.GetLayerCount()):
+            dataset.DeleteLayer(n)
+    else:
+        dataset = driver.CreateDataSource(out_shp)
     sp = osr.SpatialReference()
     sp.ImportFromWkt(profiles[0].get_projection())
     layer = dataset.CreateLayer("perfiles", sp, ogr.wkbPoint)
@@ -511,19 +517,24 @@ def _profiles_to_points(path, profiles):
         id_perfil += 1
 
 
-def _profiles_to_lines(path, profiles, distance):
+def _profiles_to_lines(out_shp, profiles, distance):
     """
     This function save a list of profiles in a line shapefile
 
-    :param path: str - Full path to the shapefile
+    :param out_shp: str - Full path to the shapefile
     :param profiles: list - List of TProfile objects
     :param distance: float - Distance for the profile segments
     :return: None
     """
 
-    # Creates point shapefle
+    # Create line shapefle
     driver = ogr.GetDriverByName("ESRI Shapefile")
-    dataset = driver.CreateDataSource(path)
+    if os.path.exists(out_shp):
+        dataset = driver.Open(out_shp, 1)
+        for n in range(dataset.GetLayerCount()):
+            dataset.DeleteLayer(n)
+    else:
+        dataset = driver.CreateDataSource(out_shp)
     sp = osr.SpatialReference()
     sp.ImportFromWkt(profiles[0].get_projection())
     layer = dataset.CreateLayer("perfiles", sp, ogr.wkbLineString)
@@ -885,7 +896,7 @@ class TProfile:
 
         return li
 
-    def get_area(self, head=True, cells=True):
+    def get_area(self, head=True, cells=True, min_area=0):
         """
         Returns a numpy.array with drainage area values for all vertices
 
@@ -896,6 +907,9 @@ class TProfile:
         areas = np.copy(self._data[:, 4])
         if not cells:
             areas *= self.dem_res ** 2
+
+        if min_area:
+            areas[np.where(areas < min_area)] = np.nan
 
         if head:
             return areas

@@ -15,7 +15,6 @@ from profiler import TProfile
 plt.rcParams["keymap.xscale"] = [""]
 plt.rcParams["keymap.yscale"] = [""]
 plt.rcParams["keymap.save"] = [u'ctrl+s']
-
 DIRS = {"left": -1, "right": 1}
 
 
@@ -296,6 +295,10 @@ class ProfilerApp:
         ax.plot(xi, yi, c="c", lw=1)
             
     def save(self):
+        """
+        Saves selected knickpoints and regressions into shapefiles
+        :return:
+        """
 
         out_knicks = self.basedir + "/knickpoints.shp"
         out_regres = self.basedir + "/regressions.shp"
@@ -328,6 +331,7 @@ class ProfilerApp:
                     geom.AddPoint(xi[n], yi[n])
                 feat.SetGeometry(geom)
                 layer.CreateFeature(feat)
+        print("Regressions saved in {0}".format(out_regres))
 
         # Save knickpoints
         if os.path.exists(out_knicks):
@@ -339,31 +343,36 @@ class ProfilerApp:
             dataset = driver.CreateDataSource(out_knicks)
             layer = dataset.CreateLayer("knickpoints", sp, ogr.wkbPoint)
 
-        for idx, perfil in enumerate(self.knick_points):
+        for idx, perfil in enumerate(self.profiles):
+            print(self.knick_points[idx])
             for kp in self.knick_points[idx]:
                 xi = perfil.get_x()[kp]
                 yi = perfil.get_y()[kp]
                 feat = ogr.Feature(layer.GetLayerDefn())
 
                 # Creamos geometria
-                geom = ogr.Geometry(ogr.wkbLineString)
+                geom = ogr.Geometry(ogr.wkbPoint)
                 geom.AddPoint(xi, yi)
                 feat.SetGeometry(geom)
                 layer.CreateFeature(feat)
+        print("Knickpoints saved in {0}".format(out_knicks))
+
 
 # ARGUMENTS
 # ==========
-profiles_file = "../../test/data/river_chi_profiles.npy"
-base_dir = "../../test/data"
+profiles_file = "../../test/data/in/river_chi_profiles.npy"
+base_dir = "../../test/data/out"
+slope_reg_points = 20
+ksn_reg_points = 20
+
 
 # CODE
 # ==========
 perfiles = np.load(profiles_file)
+for perfil in perfiles:
+    perfil.calculate_slope(slope_reg_points)
+    perfil.calculate_ksn(ksn_reg_points)
+
 fig = plt.figure()
 pgraph = ProfilerApp(fig, perfiles, base_dir)
 plt.show()
-
-        
-        
-        
-

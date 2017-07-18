@@ -37,48 +37,49 @@ import numpy as np
 import math
 import os
 
+# # QGIS TOOLBOX CODE
+# # ===================
+# ##DEM=raster
+# ##Flow_accumulation=raster
+# ##Output_channel_shapefile=output vector
+# ##Threshold=number 1000
+# ##Units=selection CELLS;MAP
+# ##Use_heads=boolean True
+# ##Heads_shapefile=vector
+# ##Id_field=field Heads_shapefile
+# ##Use_basins=boolean True
+# ##Basin_shapefile=vector
+#
+# dem = str(DEM)
+# fac = str(Flow_accumulation)
+# threshold = float(Threshold)
+# units = str(Units)
+#
+# if Use_heads:
+#     head_shp = str(Heads_shapefile)
+#     id_field = str(Id_field)
+# else:
+#     head_shp = ""
+#     id_field = ""
+#
+# if Use_basins:
+#     basin_shp = str(Basin_shapefile)
+# else:
+#     basin_shp = ""
+#
+# out_shp = str(Output_channel_shapefile)
 
-##DEM=raster
-##Flow_accumulation=raster
-##Output_channel_shapefile=output vector
-##Threshold=number 1000
-##Units=selection CELLS;MAP
-##Use_heads=boolean True
-##Heads_shapefile=vector
-##Id_field=field Heads_shapefile
-##Use_basins=boolean True
-##Basin_shapefile=vector
 
-dem = str(DEM)
-fac = str(Flow_accumulation)
-threshold = float(Threshold)
-units = str(Units)
-
-if Use_heads:
-    head_shp = str(Heads_shapefile)
-    id_field = str(Id_field)
-else:
-    head_shp = ""
-    id_field = ""
-
-if Use_basins:
-    basin_shp = str(Basin_shapefile)
-else:
-    basin_shp = ""
-
-out_shp = str(Output_channel_shapefile)
-
-
-# # DEBUG ARGUMENTS
-# # =========
-# dem = "../../test/data/in/darro25.tif"
-# fac = "../../test/data/in/darro25fac.tif"
-# threshold = 1000
-# units = "CELL"
-# basin_shp = ""
-# head_shp = ""
-# id_field = ""
-# out_shp = "../../test/data/out/QGIS_Test_GetChannels.shp"
+# DEBUG ARGUMENTS
+# ================
+dem = "../../test/data/in/darro25.tif"
+fac = "../../test/data/in/darro25fac.tif"
+threshold = 1000
+units = "CELL"
+basin_shp = ""
+head_shp = ""
+id_field = ""
+out_shp = "../../test/data/out/QGIS_Test_GetChannels.shp"
 
 
 # PROGRAM CODE

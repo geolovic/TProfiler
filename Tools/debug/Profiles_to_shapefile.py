@@ -26,9 +26,9 @@
 #  vperez@ugr.es // geolovic@gmail.com
 
 #  Version: 1
-#  June 23, 2017
+#  July 18, 2017
 
-#  Last modified June 23, 2017
+#  Last modified July 18, 2017
 
 import numpy as np
 from profiler import profiles_to_shp
@@ -36,19 +36,15 @@ from profiler import profiles_to_shp
 
 # ARGUMENTS
 # ===============
-
-basedir = "../../test/data/"
-in_profiles = basedir + "out_chi_profiles.npy"
-out_shapefile = basedir + "out_chi_map.shp"
+in_profiles = "../../test/data/in/profiles_basins.npy"
+out_shapefile = "../../test/data/out/Profiles_To_Shapefile_test.shp"
 distance = 0
 reg_points = 4
 
 
 # PROGRAM CODE
 # =============
-
 def main(in_profiles, out_shapefile, distance=0, reg_points=4):
-
     # Load profiles
     perfiles = np.load(in_profiles)
 
@@ -59,10 +55,7 @@ def main(in_profiles, out_shapefile, distance=0, reg_points=4):
             perfil.calculate_ksn(reg_points=reg_points)
 
     # Store profiles in a shapefile
-    if distance > 0:
-        profiles_to_shp(out_shapefile, perfiles, distance)
-    else:
-        profiles_to_shp(out_shapefile, perfiles, distance)
+    profiles_to_shp(out_shapefile, perfiles, distance)
 
 
 main(in_profiles, out_shapefile, distance, reg_points)

@@ -25,10 +25,10 @@
 #  18071 Granada, Spain
 #  vperez@ugr.es // geolovic@gmail.com
 
-#  Version: 1.0
-#  June 23, 2017
+#  Version: 1.1
+#  July 18, 2017
 
-#  Last modified June 23, 2017
+#  Last modified July 18, 2017
 
 import numpy as np
 import profiler as p
@@ -36,31 +36,20 @@ import profiler as p
 
 # ARGUMENTS
 # ===============
-
-dem = "srtm30.tif"
-fac = "srtm30_fac.tif"
-river_shp = "rios_principales"
-id_field = "river_id"
+dem = "../../test/data/in/darro25.tif"
+fac = "../../test/data/in/darro25fac.tif"
+river_shp = "../../test/data/in/rios.shp"
+id_field = "id"
 name_field = "name"
-out_file = "rios_rif.npy"
+out_file = "../../test/data/out/Chi_Profiles_test.npy"
 thetaref = 0.45
 reg_points = 4
 smooth = 0
 
+
 # PROGRAM CODE
 # =============
-
-import os
-print(os.getcwd())
-
-NTYPES = {'int8': 3, 'int16': 3, 'int32': 5, 'int64': 5, 'uint8': 1, 'uint16': 2,
-          'uint32': 4, 'uint64': 4, 'float16': 6, 'float32': 6, 'float64': 7}
-
-GTYPES = {1: 'uint8', 2: 'uint16', 3: 'int16', 4: 'uint32', 5: 'int32', 6: 'float32', 7: 'float64'}
-
-
-def main(dem, fac, river_shp, out_file, id_field="", name_field="", thetaref=thetaref, reg_points=reg_points,
-         smooth=smooth):
+def main(dem, fac, river_shp, out_file, id_field, name_field, thetaref, reg_points, smooth):
     # Extract profiles
     perfiles = p.profiles_from_rivers(fac, dem, river_shp, id_field=id_field, name_field=name_field, thetaref=thetaref,
                                     reg_points=reg_points, smooth=smooth)
