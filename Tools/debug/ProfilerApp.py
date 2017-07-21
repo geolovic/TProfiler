@@ -7,7 +7,8 @@ Este es un archivo temporal
 
 import matplotlib.pyplot as plt
 import numpy as np
-import ogr, osr
+import ogr
+import osr
 import os
 from profiler import TProfile
 
@@ -49,7 +50,6 @@ class ProfilerApp:
 
     # DRAWING METHODS
     # ===============
-
     def draw(self):
         """
         Draw the selected graphic for the active profile
@@ -249,19 +249,33 @@ class ProfilerApp:
                 self.regressions[self.active].pop()
                 self.draw()
 
-        if event.key.lower() == "+" and self.g_type == 2:
-            perfil = self.profiles[self.active]
-            reg_points = perfil.slope_reg_points + 1
-            perfil.calculate_slope(reg_points)
-            self.draw()
+        if event.key.lower() == "+":
+            if self.g_type == 2:
+                perfil = self.profiles[self.active]
+                reg_points = perfil.slope_reg_points + 1
+                perfil.calculate_slope(reg_points)
+                self.draw()
+            elif self.g_type == 4:
+                perfil = self.profiles[self.active]
+                reg_points = perfil.ksn_reg_points + 1
+                perfil.calculate_ksn(reg_points)
+                self.draw()
 
-        if event.key.lower() == "-" and self.g_type == 2:
-            perfil = self.profiles[self.active]
-            reg_points = perfil.slope_reg_points - 1
-            if reg_points < 1:
-                return
-            perfil.calculate_slope(reg_points)
-            self.draw()
+        if event.key.lower() == "-":
+            if self.g_type == 2:
+                perfil = self.profiles[self.active]
+                reg_points = perfil.slope_reg_points - 1
+                if reg_points < 1:
+                    return
+                perfil.calculate_slope(reg_points)
+                self.draw()
+            elif self.g_type == 4:
+                perfil = self.profiles[self.active]
+                reg_points = perfil.ksn_reg_points - 1
+                if reg_points < 1:
+                    return
+                perfil.calculate_ksn(reg_points)
+                self.draw()
 
         if event.key.lower() == "m":
             self.draw_map()
@@ -344,7 +358,6 @@ class ProfilerApp:
             layer = dataset.CreateLayer("knickpoints", sp, ogr.wkbPoint)
 
         for idx, perfil in enumerate(self.profiles):
-            print(self.knick_points[idx])
             for kp in self.knick_points[idx]:
                 xi = perfil.get_x()[kp]
                 yi = perfil.get_y()[kp]
@@ -362,8 +375,8 @@ class ProfilerApp:
 # ==========
 profiles_file = "../../test/data/in/river_chi_profiles.npy"
 base_dir = "../../test/data/out"
-slope_reg_points = 20
-ksn_reg_points = 20
+slope_reg_points = 4
+ksn_reg_points = 4
 
 
 # CODE
