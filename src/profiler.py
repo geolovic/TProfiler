@@ -114,16 +114,23 @@ def heads_from_points(dem, point_shp, id_field=""):
     demraster = p.open_raster(dem)
     dataset = ogr.Open(point_shp)
     layer = dataset.GetLayer(0)
+    layerdef = layer.GetLayerDefn()
+    idx = layerdef.GetFieldIndex(id_field)
+    take_field = False
+    if idx >= 0:
+        field_defn = layerdef.GetFieldDefn(idx)
+        if field_defn.GetType() in [0, 12]:
+            take_field = True
+
     n = 0
     for feat in layer:
         geom = feat.GetGeometryRef()
         punto = (geom.GetX(), geom.GetY())
         cell = demraster.xy_2_cell(punto)
         elev = demraster.get_cell_value(cell)
-        layerdef = layer.GetLayerDefn()
-        fields = [layerdef.GetFieldDefn(idx).GetName() for idx in range(layerdef.GetFieldCount())]
-        if id_field in fields:
-            hid = str(feat[id_field])
+
+        if take_field:
+            hid = feat.GetField(id_field)
         else:
             hid = n + 1
         n += 1
