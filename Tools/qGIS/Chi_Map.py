@@ -1,6 +1,6 @@
 # -*- coding: iso-8859-15 -*-
 #
-#  Get_Channels.py
+#  Chi_Map.py
 #
 #  Copyright (C) 2017  J. Vicente Perez, Universidad de Granada
 #
@@ -25,17 +25,17 @@
 #  18071 Granada, Spain
 #  vperez@ugr.es // geolovic@gmail.com
 
-#  Version: 1.0
-#  July 14, 2017
+#  Version: 1.1
+#  June 21, 2017
 
-#  Last modified July 14, 2017
+#  Last modified June 23, 2017
 
 import ogr
 import osr
 import gdal
-import numpy as np
 import math
 import os
+import numpy as np
 
 # QGIS TOOLBOX CODE
 # ===================
@@ -49,6 +49,10 @@ import os
 ##Id_field=field Heads_shapefile
 ##Use_basins=boolean True
 ##Basin_shapefile=vector
+##Thetaref=number 0.45
+##Regression_points=number 4
+##Smooth_window=number 0
+##Segment_distance=number 0
 
 dem = str(DEM)
 fac = str(Flow_accumulation)
@@ -68,18 +72,26 @@ else:
     basin_shp = ""
 
 out_shp = str(Output_channel_shapefile)
-
+thetaref = float(Thetaref)
+reg_points = int(Regression_points)
+smooth = float(Smooth_window)
+distance = float(Segment_distance)
 
 # # DEBUG ARGUMENTS
-# # ================
+# # ===============
 # dem = "../../test/data/in/darro25.tif"
 # fac = "../../test/data/in/darro25fac.tif"
 # threshold = 1000
 # units = "CELL"
-# basin_shp = "../../test/data/in/cuencas.shp"
+# basin_shp = ""
 # head_shp = ""
 # id_field = ""
-# out_shp = "../../test/data/out/QGIS_Test_GetChannels.shp"
+# thetaref = 0.45
+# reg_points = 4
+# smooth = 0
+# distance = 200
+# out_chi = "../../test/data/out/QGIS_ChiMap03.shp"
+# out_file = "../../test/data/out/QGIS_ChiMap03.npy"
 
 
 # IMPORTED MODULES (10th August 2017)
@@ -1516,7 +1528,8 @@ class PRaster:
 
 # PROGRAM CODE
 # =============
-def main(dem, fac, threshold, units, basin_shp, head_shp, id_field, out_shp):
+def main(dem, fac, threshold, units, basin_shp, head_shp, id_field, thetaref, reg_points, smooth, distance, out_chi,
+         out_file):
 
     # Obtenemos todas las cabeceras del DEM
     if threshold:
@@ -1524,60 +1537,39 @@ def main(dem, fac, threshold, units, basin_shp, head_shp, id_field, out_shp):
     else:
         heads = np.array([], dtype="float32").reshape((0, 6))
 
-    # Obtenemos todas las cabeceras de la capa de puntos
+    # Obtenemos los canales principales
     if head_shp:
-        main_heads = heads_from_points(dem, head_shp, id_field=id_field)
+        main_heads = heads_from_points(dem, head_shp, id_field)
     else:
         main_heads = np.array([], dtype="float32").reshape((0, 6))
 
     # Combinamos las cabeceras de la capa de puntos con las cabeceras del DEM
     heads = np.append(main_heads, heads, axis=0)
-
-    if heads.shape[0] == 0:
+    if len(heads) == 0:
         return
 
-    # Obtenemos los canales
+    # Lista vacia para perfiles de salida
+    out_profiles = []
+
     if basin_shp:
         dataset = ogr.Open(basin_shp)
         layer = dataset.GetLayer(0)
-
-        # Otenemos los canales dentro de cada cuenca
-        channels = []
         for feat in layer:
             basin_geom = feat.GetGeometryRef()
             heads_inside = heads_inside_basin(heads, basin_geom)
-            channels.extend(get_channels(fac, dem, heads_inside, basin_geom))
+            if len(heads_inside) > 0:
+                out_profiles.extend(get_profiles(fac, dem, heads_inside, basin=basin_geom, tributaries=True,
+                                                 thetaref=thetaref, reg_points=reg_points, smooth=smooth))
     else:
-        channels = get_channels(fac, dem, heads)
+        out_profiles.extend(get_profiles(fac, dem, heads, tributaries=True, thetaref=thetaref, reg_points=reg_points,
+                                         smooth=smooth))
 
-    # Creamos output shapefile
-    proj_wkt = gdal.Open(dem).GetProjection()
-    driver = ogr.GetDriverByName("ESRI Shapefile")
-    if os.path.exists(out_shp):
-        dataset = driver.Open(out_shp, 1)
-        for n in range(dataset.GetLayerCount()):
-            dataset.DeleteLayer(n)
-    else:
-        dataset = driver.CreateDataSource(out_shp)
+    # Save output profiles
+    np.save(out_file, np.array(out_profiles))
 
-    sp = osr.SpatialReference()
-    sp.ImportFromWkt(proj_wkt)
-    layer = dataset.CreateLayer("channels", sp, ogr.wkbLineString)
-    layer.CreateField(ogr.FieldDefn("id", ogr.OFTInteger))
-
-    # Guardamos channels en shapefile
-    for ch in channels:
-        name = ch[0]
-        chandata = ch[1]
-        geom = ogr.Geometry(ogr.wkbLineString)
-        for row in chandata:
-            geom.AddPoint(float(row[0]), float(row[1]))
-        # Create the feature
-        feature = ogr.Feature(layer.GetLayerDefn())
-        # Add geometry to feature and feature to layer
-        feature.SetGeometry(geom)
-        feature.SetField("id", name)
-        layer.CreateFeature(feature)
+    # Save output profiles in a shapefile
+    profiles_to_shp(out_chi, out_profiles, distance)
 
 
-main(dem, fac, threshold, units, basin_shp, head_shp, id_field, out_shp)
+main(dem, fac, threshold, units, basin_shp, head_shp, id_field, thetaref, reg_points, smooth, distance, out_chi,
+     out_file)

@@ -27,47 +27,41 @@
 
 #  Version: 1.0
 #  July 14, 2017
-
 #  Last modified July 14, 2017
 
 import ogr
 import osr
 import gdal
 import numpy as np
-import math
 import os
+import argparse
+import math
 
-# QGIS TOOLBOX CODE
-# ===================
-##DEM=raster
-##Flow_accumulation=raster
-##Output_channel_shapefile=output vector
-##Threshold=number 1000
-##Units=selection CELLS;MAP
-##Use_heads=boolean True
-##Heads_shapefile=vector
-##Id_field=field Heads_shapefile
-##Use_basins=boolean True
-##Basin_shapefile=vector
 
-dem = str(DEM)
-fac = str(Flow_accumulation)
-threshold = float(Threshold)
-units = str(Units)
+# ARGUMENT PARSER
+# ===============
+parser = argparse.ArgumentParser()
+parser.add_argument("dem", help="Digital Elevation Model")
+parser.add_argument("fac", help="Flow Accumulation Raster")
+parser.add_argument("out_shp", help="Output channel shapefile")
+parser.add_argument("-th", "--threshold", help="Flow Accumulation threshold", type=float, default=0.)
+parser.add_argument("-u", "--units",  help="Threshold units", choices=["CELL", "MAP"], default="CELL")
+parser.add_argument("-b", "--basins", help="Basins shapefile", default="")
+parser.add_argument("-hd", "--heads",  help="Heads shapefile", default="")
+parser.add_argument("-id", "--id_field",  help="Id Field in heads shapefile", default="")
+args = parser.parse_args()
 
-if Use_heads:
-    head_shp = str(Heads_shapefile)
-    id_field = str(Id_field)
-else:
-    head_shp = ""
-    id_field = ""
 
-if Use_basins:
-    basin_shp = str(Basin_shapefile)
-else:
-    basin_shp = ""
-
-out_shp = str(Output_channel_shapefile)
+# ARGUMENTS
+# =========
+dem = args.dem
+fac = args.fac
+threshold = args.threshold
+units = args.units
+basin_shp = args.basins
+head_shp = args.heads
+id_field = args.id_field
+out_shp = args.out_shp
 
 
 # # DEBUG ARGUMENTS
@@ -79,7 +73,7 @@ out_shp = str(Output_channel_shapefile)
 # basin_shp = "../../test/data/in/cuencas.shp"
 # head_shp = ""
 # id_field = ""
-# out_shp = "../../test/data/out/QGIS_Test_GetChannels.shp"
+# out_shp = "../../test/data/out/QGIS_Test_GetChannels2.shp"
 
 
 # IMPORTED MODULES (10th August 2017)
@@ -1536,8 +1530,8 @@ def main(dem, fac, threshold, units, basin_shp, head_shp, id_field, out_shp):
     if heads.shape[0] == 0:
         return
 
-    # Obtenemos los canales
     if basin_shp:
+        # Obtenemos los diferentes poligonos de las cuencas
         dataset = ogr.Open(basin_shp)
         layer = dataset.GetLayer(0)
 
@@ -1578,6 +1572,5 @@ def main(dem, fac, threshold, units, basin_shp, head_shp, id_field, out_shp):
         feature.SetGeometry(geom)
         feature.SetField("id", name)
         layer.CreateFeature(feature)
-
 
 main(dem, fac, threshold, units, basin_shp, head_shp, id_field, out_shp)
