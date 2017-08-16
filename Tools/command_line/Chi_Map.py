@@ -1,6 +1,6 @@
 # -*- coding: iso-8859-15 -*-
 #
-#  Get_Channels.py
+#  Chi_Map.py
 #
 #  Copyright (C) 2017  J. Vicente Perez, Universidad de Granada
 #
@@ -25,17 +25,18 @@
 #  18071 Granada, Spain
 #  vperez@ugr.es // geolovic@gmail.com
 
-#  Version: 1.0
-#  July 14, 2017
-#  Last modified July 14, 2017
+#  Version: 1.1
+#  June 21, 2017
+
+#  Last modified June 23, 2017
 
 import ogr
 import osr
 import gdal
-import numpy as np
-import os
-import argparse
 import math
+import os
+import numpy as np
+import argparse
 
 
 # ARGUMENT PARSER
@@ -43,17 +44,22 @@ import math
 parser = argparse.ArgumentParser()
 parser.add_argument("dem", help="Digital Elevation Model")
 parser.add_argument("fac", help="Flow Accumulation Raster")
-parser.add_argument("out_shp", help="Output channel shapefile")
+parser.add_argument("out_shp", help="Output Chi shapefile")
 parser.add_argument("-th", "--threshold", help="Flow Accumulation threshold", type=float, default=0.)
 parser.add_argument("-u", "--units",  help="Threshold units", choices=["CELL", "MAP"], default="CELL")
 parser.add_argument("-b", "--basins", help="Basins shapefile", default="")
 parser.add_argument("-hd", "--heads",  help="Heads shapefile", default="")
 parser.add_argument("-id", "--id_field",  help="Id Field in heads shapefile", default="")
+parser.add_argument("-t", "--thetaref", type=float, default=0.45, help="Reference n/m value for chi index evaluation")
+dist_help = "Segment distance for output Chi shapefile. Distance = 0 will generate a point shapefile"
+parser.add_argument("-d", "distance", type=float, default=0., help=dist_help)
+parser.add_argument("-r", "--reg_points", type=int, default=4, help="Number of points for slope and ksn regressions")
+parser.add_argument("-s", "--smooth", type=float, default=0.0, help="Distance for smooth profile elevations")
 args = parser.parse_args()
 
 
 # ARGUMENTS
-# =========
+# ===============
 dem = args.dem
 fac = args.fac
 threshold = args.threshold
@@ -61,11 +67,16 @@ units = args.units
 basin_shp = args.basins
 head_shp = args.heads
 id_field = args.id_field
-out_shp = args.out_shp
+thetaref = args.thetaref
+reg_points = args.reg_points
+smooth = args.smooth
+distance = args.distance
+out_chi = args.out_shp
+out_file = os.path.splitext(out_chi) + ".npy"
 
 
 # # DEBUG ARGUMENTS
-# # ================
+# # ===============
 # dem = "../../test/data/in/darro25.tif"
 # fac = "../../test/data/in/darro25fac.tif"
 # threshold = 1000
@@ -73,10 +84,15 @@ out_shp = args.out_shp
 # basin_shp = ""
 # head_shp = ""
 # id_field = ""
-# out_shp = "../../test/data/out/Argparse_Test_GetChannels.shp"
+# thetaref = 0.45
+# reg_points = 4
+# smooth = 0
+# distance = 200
+# out_chi = "../../test/data/out/QGIS_ChiMap03.shp"
+# out_file = "../../test/data/out/QGIS_ChiMap03.npy"
 
 
-# IMPORTED MODULES (12th August 2017)
+# IMPORTED MODULES (10th August 2017)
 # ===================================
 PROFILE_DEFAULT = {'name': "", 'thetaref': 0.45, 'chi0': 0, 'reg_points': 4, 'srs': "", 'smooth': 0}
 
@@ -231,7 +247,7 @@ def get_profiles(fac, dem, heads, basin=None, tributaries=False, **kwargs):
     :param kwargs: TProfile arguments for profile creation
     :return: list of TProfile objects
     """
-
+    
     # Get facraster and demrasters as pRaster objects
     facraster = open_raster(fac)
     demraster = open_raster(dem)
@@ -334,9 +350,10 @@ def get_profiles(fac, dem, heads, basin=None, tributaries=False, **kwargs):
             # Creamos el perfil
             perfil = TProfile(np.array(profile_data), facraster.cellsize, rid=head[5], thetaref=opt['thetaref'],
                               chi0=chi0, reg_points=opt['reg_points'], srs=srs, mouthdist=dist0, smooth=opt['smooth'])
+            
             out_profiles.append(perfil)
             # Rellenamos las posiciones procesadas con los valores de chi
-            # Y si hemos seleccionado tributaries, también se marcan las distancias
+            # Y si hemos seleccionado tributaries, tambiÃÂÃÂ©n se marcan las distancias
             n = 0
             distances = perfil.get_l(False)
             distances = distances[::-1]
@@ -346,7 +363,9 @@ def get_profiles(fac, dem, heads, basin=None, tributaries=False, **kwargs):
                 if tributaries:
                     dist_raster.set_cell_value(position, float(distances[n]))
                 n += 1
+            
         first_river = False
+        
     return out_profiles
 
 
@@ -598,8 +617,8 @@ def _profiles_to_lines(out_shp, profiles, distance):
 
     id_perfil = 1
     for perfil in profiles:
-        # Transformamos la distancia a n�mero de celdas
-        # dx es el n�mero de puntos que tendr� cada segmento (n�mero impar)
+        # Transformamos la distancia a nÃÂºmero de celdas
+        # dx es el nÃÂºmero de puntos que tendrÃÂ¡ cada segmento (nÃÂºmero impar)
         cellsize = perfil.dem_res
         if distance == 0:
             dx = len(perfil._data)
@@ -1452,14 +1471,14 @@ class PRaster:
         vec_adyacentes = [(-1, 0), (0, -1), (0, 1), (1, 0)]
         vec_diagonales = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
 
-        # Suponemos que el valor m�ximo es el mismo
+        # Suponemos que el valor mÃÂ¡ximo es el mismo
         cell_value = self.get_cell_value(cell)
 
         max_value = cell_value
         max_pos = cell
 
         # La celda a la que va el flujo no tiene porque ser la de mayor valor de flow accumulation
-        # En el caso de que el flujo haga una L la m�xima es la diagonal, pero el flujo va a la adyacente
+        # En el caso de que el flujo haga una L la mÃÂ¡xima es la diagonal, pero el flujo va a la adyacente
         # Por ello primero se comprueban las celdas adyacentes y luego las diagonales
 
         for n in vec_adyacentes:
@@ -1510,67 +1529,47 @@ class PRaster:
 
 # PROGRAM CODE
 # =============
-def main(dem, fac, threshold, units, basin_shp, head_shp, id_field, out_shp):
-
+def main(dem, fac, threshold, units, basin_shp, head_shp, id_field, thetaref, reg_points, smooth, distance, out_chi,
+         out_file):
     # Obtenemos todas las cabeceras del DEM
     if threshold:
         heads = get_heads(fac, dem, threshold, units)
     else:
         heads = np.array([], dtype="float32").reshape((0, 6))
 
-    # Obtenemos todas las cabeceras de la capa de puntos
+    # Obtenemos los canales principales
     if head_shp:
-        main_heads = heads_from_points(dem, head_shp, id_field=id_field)
+        main_heads = heads_from_points(dem, head_shp, id_field)
     else:
         main_heads = np.array([], dtype="float32").reshape((0, 6))
 
     # Combinamos las cabeceras de la capa de puntos con las cabeceras del DEM
     heads = np.append(main_heads, heads, axis=0)
-
-    if heads.shape[0] == 0:
+    if len(heads) == 0:
         return
+    
+    # Lista vacia para perfiles de salida
+    out_profiles = []
 
     if basin_shp:
-        # Obtenemos los diferentes poligonos de las cuencas
         dataset = ogr.Open(basin_shp)
         layer = dataset.GetLayer(0)
-
-        # Otenemos los canales dentro de cada cuenca
-        channels = []
         for feat in layer:
             basin_geom = feat.GetGeometryRef()
             heads_inside = heads_inside_basin(heads, basin_geom)
-            channels.extend(get_channels(fac, dem, heads_inside, basin_geom))
+            if len(heads_inside) > 0:
+                out_profiles.extend(get_profiles(fac, dem, heads_inside, basin=basin_geom, tributaries=True,
+                                                 thetaref=thetaref, reg_points=reg_points, smooth=smooth))
     else:
-        channels = get_channels(fac, dem, heads)
+        out_profiles.extend(get_profiles(fac, dem, heads, tributaries=True, thetaref=thetaref, reg_points=reg_points,
+                                         smooth=smooth))
 
-    # Creamos output shapefile
-    proj_wkt = gdal.Open(dem).GetProjection()
-    driver = ogr.GetDriverByName("ESRI Shapefile")
-    if os.path.exists(out_shp):
-        dataset = driver.Open(out_shp, 1)
-        for n in range(dataset.GetLayerCount()):
-            dataset.DeleteLayer(n)
-    else:
-        dataset = driver.CreateDataSource(out_shp)
+    # Save output profiles as a list of TProfiles
+    np.save(out_file, np.array(out_profiles))
 
-    sp = osr.SpatialReference()
-    sp.ImportFromWkt(proj_wkt)
-    layer = dataset.CreateLayer("channels", sp, ogr.wkbLineString)
-    layer.CreateField(ogr.FieldDefn("id", ogr.OFTInteger))
+    # Save output profiles in a shapefile
+    profiles_to_shp(out_chi, out_profiles, distance)
 
-    # Guardamos channels en shapefile
-    for ch in channels:
-        name = ch[0]
-        chandata = ch[1]
-        geom = ogr.Geometry(ogr.wkbLineString)
-        for row in chandata:
-            geom.AddPoint(float(row[0]), float(row[1]))
-        # Create the feature
-        feature = ogr.Feature(layer.GetLayerDefn())
-        # Add geometry to feature and feature to layer
-        feature.SetGeometry(geom)
-        feature.SetField("id", name)
-        layer.CreateFeature(feature)
 
-main(dem, fac, threshold, units, basin_shp, head_shp, id_field, out_shp)
+main(dem, fac, threshold, units, basin_shp, head_shp, id_field, thetaref, reg_points, smooth, distance, out_chi,
+     out_file)

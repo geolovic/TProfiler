@@ -10,15 +10,24 @@ import numpy as np
 import ogr
 import osr
 import os
+import cPickle
+
+
+# QGIS TOOLBOX CODE
+# ===================
+##Input_file=file
+##Base_dir=folder
+##Slope_regression_points=number 0
+##Ksn_regression_points=number 0
 
 
 # ARGUMENTS
 # ==========
-in_file = "datos/saved_profiles.npy"
-base_dir = os.path.dirname(in_file)
+in_file = str(Input_file)
+base_dir = str(Base_dir)
 is_graph = False
-slope_reg_points = 15
-ksn_reg_points = 15
+slope_reg_points = int(Slope_regression_points)
+ksn_reg_points = int(Ksn_regression_points)
 
 
 # Disable some keymap characters that interfere with graph key events
@@ -475,9 +484,9 @@ class ProfilerApp:
         if self.mode:
             self.mode = None
             self.figure.canvas.mpl_disconnect(self.pcid)
-        
-        np.save(self.basedir + "graph.npy", np.array([self]))
-        np.save(self.basedir + "saved_profiles.npy", self.profiles)
+
+        # np.save(self.basedir + "graph.npy", np.array([self]))
+        # np.save(self.basedir + "saved_profiles.npy", self.profiles)
         self.mode_txt.set_text("Files saved on '{0}'".format(self.basedir))
         self.ax.figure.canvas.draw()
     
@@ -985,12 +994,12 @@ class TProfile:
 # CODE
 # ==========   
 if is_graph:
-    pgraph = np.load(in_file)[0]
+    pgraph = cPickle.load(open(in_file, "r"))[0]
     pgraph.activate()
     
 else:
     
-    perfiles = np.load(in_file)
+    perfiles = cPickle.load(open(in_file, "r"))
     if not base_dir:
         base_dir = os.path.dirname(in_file)
     

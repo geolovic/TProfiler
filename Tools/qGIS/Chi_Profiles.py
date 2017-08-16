@@ -1,6 +1,6 @@
 # -*- coding: iso-8859-15 -*-
 #
-#  Get_Channels.py
+#  Chi_Profiles.py
 #
 #  Copyright (C) 2017  J. Vicente Perez, Universidad de Granada
 #
@@ -25,55 +25,55 @@
 #  18071 Granada, Spain
 #  vperez@ugr.es // geolovic@gmail.com
 
-#  Version: 1.0
-#  July 14, 2017
-#  Last modified July 14, 2017
+#  Version: 1.1
+#  August 12, 2017
+
+#  Last modified August 12, 2017
 
 import ogr
 import osr
 import gdal
 import numpy as np
 import os
-import argparse
 import math
+import cPickle
 
 
-# ARGUMENT PARSER
-# ===============
-parser = argparse.ArgumentParser()
-parser.add_argument("dem", help="Digital Elevation Model")
-parser.add_argument("fac", help="Flow Accumulation Raster")
-parser.add_argument("out_shp", help="Output channel shapefile")
-parser.add_argument("-th", "--threshold", help="Flow Accumulation threshold", type=float, default=0.)
-parser.add_argument("-u", "--units",  help="Threshold units", choices=["CELL", "MAP"], default="CELL")
-parser.add_argument("-b", "--basins", help="Basins shapefile", default="")
-parser.add_argument("-hd", "--heads",  help="Heads shapefile", default="")
-parser.add_argument("-id", "--id_field",  help="Id Field in heads shapefile", default="")
-args = parser.parse_args()
+# QGIS TOOLBOX CODE
+# ===================
+##DEM=raster
+##Flow_accumulation=raster
+##River_shapefile=vector
+##Id_field=field River_shapefile
+##Name_field=field River_shapefile
+##Output_file=output file
+##Thetaref=number 0.45
+##Regression_points=number 4
+##Smooth_window=number 0
 
 
-# ARGUMENTS
-# =========
-dem = args.dem
-fac = args.fac
-threshold = args.threshold
-units = args.units
-basin_shp = args.basins
-head_shp = args.heads
-id_field = args.id_field
-out_shp = args.out_shp
+dem = str(DEM)
+fac = str(Flow_accumulation)
+river_shp = str(River_shapefile)
+id_field = str(Id_field)
+name_field = str(Name_field)
+thetaref = float(Thetaref)
+reg_points = int(Regression_points)
+smooth = float(Smooth_window)
+out_file = str(Output_file)
 
 
 # # DEBUG ARGUMENTS
-# # ================
+# # ===============
 # dem = "../../test/data/in/darro25.tif"
 # fac = "../../test/data/in/darro25fac.tif"
-# threshold = 1000
-# units = "CELL"
-# basin_shp = ""
-# head_shp = ""
-# id_field = ""
-# out_shp = "../../test/data/out/Argparse_Test_GetChannels.shp"
+# river_shp = "../../test/data/in/rios.shp"
+# id_field = "id"
+# name_field = "name"
+# thetaref = 0.45
+# reg_points = 4
+# smooth = 0
+# out_file = "../../test/data/out/Argparse_Chi_Profiles_test.npy"
 
 
 # IMPORTED MODULES (12th August 2017)
@@ -336,7 +336,7 @@ def get_profiles(fac, dem, heads, basin=None, tributaries=False, **kwargs):
                               chi0=chi0, reg_points=opt['reg_points'], srs=srs, mouthdist=dist0, smooth=opt['smooth'])
             out_profiles.append(perfil)
             # Rellenamos las posiciones procesadas con los valores de chi
-            # Y si hemos seleccionado tributaries, tambiÃ©n se marcan las distancias
+            # Y si hemos seleccionado tributaries, tambiÃÂ©n se marcan las distancias
             n = 0
             distances = perfil.get_l(False)
             distances = distances[::-1]
@@ -598,8 +598,8 @@ def _profiles_to_lines(out_shp, profiles, distance):
 
     id_perfil = 1
     for perfil in profiles:
-        # Transformamos la distancia a número de celdas
-        # dx es el número de puntos que tendrá cada segmento (número impar)
+        # Transformamos la distancia a nÃºmero de celdas
+        # dx es el nÃºmero de puntos que tendrÃ¡ cada segmento (nÃºmero impar)
         cellsize = perfil.dem_res
         if distance == 0:
             dx = len(perfil._data)
@@ -1452,14 +1452,14 @@ class PRaster:
         vec_adyacentes = [(-1, 0), (0, -1), (0, 1), (1, 0)]
         vec_diagonales = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
 
-        # Suponemos que el valor máximo es el mismo
+        # Suponemos que el valor mÃ¡ximo es el mismo
         cell_value = self.get_cell_value(cell)
 
         max_value = cell_value
         max_pos = cell
 
         # La celda a la que va el flujo no tiene porque ser la de mayor valor de flow accumulation
-        # En el caso de que el flujo haga una L la máxima es la diagonal, pero el flujo va a la adyacente
+        # En el caso de que el flujo haga una L la mÃ¡xima es la diagonal, pero el flujo va a la adyacente
         # Por ello primero se comprueban las celdas adyacentes y luego las diagonales
 
         for n in vec_adyacentes:
@@ -1510,67 +1510,14 @@ class PRaster:
 
 # PROGRAM CODE
 # =============
-def main(dem, fac, threshold, units, basin_shp, head_shp, id_field, out_shp):
+def main(dem, fac, river_shp, out_file, id_field, name_field, thetaref, reg_points, smooth):
+    # Extract profiles
+    perfiles = profiles_from_rivers(fac, dem, river_shp, id_field=id_field, name_field=name_field, thetaref=thetaref,
+                                    reg_points=reg_points, smooth=smooth)
+    # Save profiles with cPickle
+    cPickle.dump(perfiles, open(out_file, "w"))
+    #perfiles = np.array(perfiles)
+    #np.save(out_file, perfiles)
 
-    # Obtenemos todas las cabeceras del DEM
-    if threshold:
-        heads = get_heads(fac, dem, threshold, units)
-    else:
-        heads = np.array([], dtype="float32").reshape((0, 6))
 
-    # Obtenemos todas las cabeceras de la capa de puntos
-    if head_shp:
-        main_heads = heads_from_points(dem, head_shp, id_field=id_field)
-    else:
-        main_heads = np.array([], dtype="float32").reshape((0, 6))
-
-    # Combinamos las cabeceras de la capa de puntos con las cabeceras del DEM
-    heads = np.append(main_heads, heads, axis=0)
-
-    if heads.shape[0] == 0:
-        return
-
-    if basin_shp:
-        # Obtenemos los diferentes poligonos de las cuencas
-        dataset = ogr.Open(basin_shp)
-        layer = dataset.GetLayer(0)
-
-        # Otenemos los canales dentro de cada cuenca
-        channels = []
-        for feat in layer:
-            basin_geom = feat.GetGeometryRef()
-            heads_inside = heads_inside_basin(heads, basin_geom)
-            channels.extend(get_channels(fac, dem, heads_inside, basin_geom))
-    else:
-        channels = get_channels(fac, dem, heads)
-
-    # Creamos output shapefile
-    proj_wkt = gdal.Open(dem).GetProjection()
-    driver = ogr.GetDriverByName("ESRI Shapefile")
-    if os.path.exists(out_shp):
-        dataset = driver.Open(out_shp, 1)
-        for n in range(dataset.GetLayerCount()):
-            dataset.DeleteLayer(n)
-    else:
-        dataset = driver.CreateDataSource(out_shp)
-
-    sp = osr.SpatialReference()
-    sp.ImportFromWkt(proj_wkt)
-    layer = dataset.CreateLayer("channels", sp, ogr.wkbLineString)
-    layer.CreateField(ogr.FieldDefn("id", ogr.OFTInteger))
-
-    # Guardamos channels en shapefile
-    for ch in channels:
-        name = ch[0]
-        chandata = ch[1]
-        geom = ogr.Geometry(ogr.wkbLineString)
-        for row in chandata:
-            geom.AddPoint(float(row[0]), float(row[1]))
-        # Create the feature
-        feature = ogr.Feature(layer.GetLayerDefn())
-        # Add geometry to feature and feature to layer
-        feature.SetGeometry(geom)
-        feature.SetField("id", name)
-        layer.CreateFeature(feature)
-
-main(dem, fac, threshold, units, basin_shp, head_shp, id_field, out_shp)
+main(dem, fac, river_shp, out_file, id_field, name_field, thetaref, reg_points, smooth)

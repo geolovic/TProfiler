@@ -44,10 +44,10 @@ import numpy as np
 ##Output_channel_shapefile=output vector
 ##Threshold=number 1000
 ##Units=selection CELLS;MAP
-##Use_heads=boolean True
+##Use_heads=boolean False
 ##Heads_shapefile=vector
 ##Id_field=field Heads_shapefile
-##Use_basins=boolean True
+##Use_basins=boolean False
 ##Basin_shapefile=vector
 ##Thetaref=number 0.45
 ##Regression_points=number 4
@@ -71,11 +71,13 @@ if Use_basins:
 else:
     basin_shp = ""
 
-out_shp = str(Output_channel_shapefile)
+out_chi = str(Output_channel_shapefile)
+out_file = os.path.splitext(out_chi)[0] + ".dat"
 thetaref = float(Thetaref)
 reg_points = int(Regression_points)
 smooth = float(Smooth_window)
 distance = float(Segment_distance)
+
 
 # # DEBUG ARGUMENTS
 # # ===============
@@ -249,7 +251,7 @@ def get_profiles(fac, dem, heads, basin=None, tributaries=False, **kwargs):
     :param kwargs: TProfile arguments for profile creation
     :return: list of TProfile objects
     """
-
+    
     # Get facraster and demrasters as pRaster objects
     facraster = open_raster(fac)
     demraster = open_raster(dem)
@@ -352,9 +354,10 @@ def get_profiles(fac, dem, heads, basin=None, tributaries=False, **kwargs):
             # Creamos el perfil
             perfil = TProfile(np.array(profile_data), facraster.cellsize, rid=head[5], thetaref=opt['thetaref'],
                               chi0=chi0, reg_points=opt['reg_points'], srs=srs, mouthdist=dist0, smooth=opt['smooth'])
+            
             out_profiles.append(perfil)
             # Rellenamos las posiciones procesadas con los valores de chi
-            # Y si hemos seleccionado tributaries, también se marcan las distancias
+            # Y si hemos seleccionado tributaries, tambiÃÂÃÂ©n se marcan las distancias
             n = 0
             distances = perfil.get_l(False)
             distances = distances[::-1]
@@ -364,7 +367,9 @@ def get_profiles(fac, dem, heads, basin=None, tributaries=False, **kwargs):
                 if tributaries:
                     dist_raster.set_cell_value(position, float(distances[n]))
                 n += 1
+            
         first_river = False
+        
     return out_profiles
 
 
@@ -616,8 +621,8 @@ def _profiles_to_lines(out_shp, profiles, distance):
 
     id_perfil = 1
     for perfil in profiles:
-        # Transformamos la distancia a n�mero de celdas
-        # dx es el n�mero de puntos que tendr� cada segmento (n�mero impar)
+        # Transformamos la distancia a nÃÂºmero de celdas
+        # dx es el nÃÂºmero de puntos que tendrÃÂ¡ cada segmento (nÃÂºmero impar)
         cellsize = perfil.dem_res
         if distance == 0:
             dx = len(perfil._data)
@@ -1470,14 +1475,14 @@ class PRaster:
         vec_adyacentes = [(-1, 0), (0, -1), (0, 1), (1, 0)]
         vec_diagonales = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
 
-        # Suponemos que el valor m�ximo es el mismo
+        # Suponemos que el valor mÃÂ¡ximo es el mismo
         cell_value = self.get_cell_value(cell)
 
         max_value = cell_value
         max_pos = cell
 
         # La celda a la que va el flujo no tiene porque ser la de mayor valor de flow accumulation
-        # En el caso de que el flujo haga una L la m�xima es la diagonal, pero el flujo va a la adyacente
+        # En el caso de que el flujo haga una L la mÃÂ¡xima es la diagonal, pero el flujo va a la adyacente
         # Por ello primero se comprueban las celdas adyacentes y luego las diagonales
 
         for n in vec_adyacentes:
@@ -1530,7 +1535,7 @@ class PRaster:
 # =============
 def main(dem, fac, threshold, units, basin_shp, head_shp, id_field, thetaref, reg_points, smooth, distance, out_chi,
          out_file):
-
+    progress.setText("Processing heads ...")
     # Obtenemos todas las cabeceras del DEM
     if threshold:
         heads = get_heads(fac, dem, threshold, units)
@@ -1548,9 +1553,12 @@ def main(dem, fac, threshold, units, basin_shp, head_shp, id_field, thetaref, re
     if len(heads) == 0:
         return
 
+    progress.setText("Heads processed")
+    
     # Lista vacia para perfiles de salida
     out_profiles = []
 
+    progress.setText("Procesing channels ...")
     if basin_shp:
         dataset = ogr.Open(basin_shp)
         layer = dataset.GetLayer(0)
@@ -1563,9 +1571,12 @@ def main(dem, fac, threshold, units, basin_shp, head_shp, id_field, thetaref, re
     else:
         out_profiles.extend(get_profiles(fac, dem, heads, tributaries=True, thetaref=thetaref, reg_points=reg_points,
                                          smooth=smooth))
+    progress.setText("Channels processed")
 
-    # Save output profiles
-    np.save(out_file, np.array(out_profiles))
+    # Save output profiles as a list of TProfiles
+    import cPickle
+    cPickle.dump(out_profiles, open(out_file, "w"))
+    # np.save(out_file, np.array(out_profiles))
 
     # Save output profiles in a shapefile
     profiles_to_shp(out_chi, out_profiles, distance)
