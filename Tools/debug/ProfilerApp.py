@@ -14,7 +14,7 @@ import os
 
 # ARGUMENTS
 # ==========
-in_file = "datos/saved_profiles.npy"
+in_file = "../command_line/data/darro_chi_profiles.npy"
 base_dir = os.path.dirname(in_file)
 is_graph = False
 slope_reg_points = 15
