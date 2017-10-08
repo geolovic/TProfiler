@@ -41,9 +41,9 @@ from profiler import TProfile
 
 # DEBUG ARGUMENTS
 # ===============
-in_file = "/Users/vicen/GIS/01_PROYECTOS/WSierra_40/gisdata/chi_analysis/main_profiles"
-qgis_file = True
-is_graph = False
+in_file = "../command_line/data/graph.npy"
+qgis_file = False
+is_graph = True
 slope_reg_points = 0
 ksn_reg_points = 0
 
@@ -573,8 +573,11 @@ def load_qgis_data(in_file):
 # ============
 base_dir = os.path.dirname(in_file)
 if is_graph:
+    print("Cargando")
     pgraph = np.load(in_file)[0]
+    print("Cargado")
     pgraph.activate()
+    print("Activado")
 else:
     if qgis_file:
         perfiles = load_qgis_data(in_file)
