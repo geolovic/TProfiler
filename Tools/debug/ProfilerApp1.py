@@ -1,25 +1,51 @@
-# -*- coding: utf-8 -*-
-"""
-Editor de Spyder
+# -*- coding: iso-8859-15 -*-
+#
+#  ProfilerApp1.py
+#
+#  Copyright (C) 2017  J. Vicente Perez, Universidad de Granada
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+#  MA 02110-1301, USA.
 
-Este es un archivo temporal
-"""
+#  For additional information, contact to:
+#  Jose Vicente Perez Pena
+#  Dpto. Geodinamica-Universidad de Granada
+#  18071 Granada, Spain
+#  vperez@ugr.es // geolovic@gmail.com
+
+#  Version: 2
+#  October 08, 2017
+
+#  Last modified October 08, 2017
 
 import matplotlib.pyplot as plt
 import numpy as np
 import ogr
 import osr
 import os
+import pickle
 from profiler import TProfile
 
 
-# ARGUMENTS
-# ==========
-in_file = "../command_line/data/darro_chi_profiles.npy"
-base_dir = os.path.dirname(in_file)
+# DEBUG ARGUMENTS
+# ===============
+in_file = "/Users/vicen/GIS/01_PROYECTOS/WSierra_40/gisdata/chi_analysis/main_profiles"
+qgis_file = True
 is_graph = False
-slope_reg_points = 15
-ksn_reg_points = 15
+slope_reg_points = 0
+ksn_reg_points = 0
 
 
 # Disable some keymap characters that interfere with graph key events
@@ -27,6 +53,7 @@ plt.rcParams["keymap.xscale"] = [""]
 plt.rcParams["keymap.yscale"] = [""]
 plt.rcParams["keymap.save"] = [u'ctrl+s']
 key_dict = {"LEFT": -1, "RIGHT": 1, "+": 1, "-": -1}
+k_type = {0: "r*", 1: "g*", 2: "r.", 3: "y."}  # Knickpoint types
 
 
 class ProfilerApp:
@@ -38,7 +65,6 @@ class ProfilerApp:
     
     def __init__(self, figure, profiles, basedir=""):
         """
-        
         :param figure: Matplotlib.Figure to draw graphics
         :param profiles: numpy.array with TProfiles objects
         :param basedir: Base directory to save regressions and knickpoints
@@ -98,7 +124,7 @@ class ProfilerApp:
 
         # Draw knickpoints
         for k in self.knick_points[self.active]:
-            self.ax.plot(li[k], zi[k], "r*", mew=0.5, mec="k", ms=10)
+            self.ax.plot(li[k[0]], zi[k[0]], k_type[k[1]], mew=0.5, mec="k", ms=10)
         
     def _draw_area_slope(self):
         """
@@ -117,7 +143,7 @@ class ProfilerApp:
 
         # Draw knickpoints
         for k in self.knick_points[self.active]:
-            self.ax.plot(areas[k], slopes[k], "r*", mew=0.5, mec="k", ms=10)
+            self.ax.plot(areas[k[0]], slopes[k[0]], k_type[k[1]], mew=0.5, mec="k", ms=10)
 
     def _draw_chi_profile(self):
         """
@@ -143,7 +169,7 @@ class ProfilerApp:
 
         # Draw knickpoints
         for k in self.knick_points[self.active]:
-            self.ax.plot(chi[k], zi[k], "r*", mew=0.5, mec="k", ms=10)
+            self.ax.plot(chi[k[0]], zi[k[0]], k_type[k[1]], mew=0.5, mec="k", ms=10)
 
     def _draw_ksn_profile(self):
         """
@@ -160,7 +186,7 @@ class ProfilerApp:
 
         # Draw knickpoints
         for k in self.knick_points[self.active]:
-            self.ax.plot(li[k], ksn[k], "r*", mew=0.5, mec="k", ms=10)
+            self.ax.plot(li[k[0]], ksn[k[0]], k_type[k[1]], mew=0.5, mec="k", ms=10)
 
     def _mode_inf(self):
         """
@@ -189,7 +215,7 @@ class ProfilerApp:
             C: Clears the last regression or last knickpoint (if in mode R or K)
             + / - : Increases/reduces reg points in area-slope or ksn plots
             S: Save all the knickpoints and regressions
-            M: Draws a map with all the profiles and knickpoints (hightlights the active one)
+            M: Draws a map with all the profiles and knickpoints (hightlighting the active one)
         """
         key = event.key.upper()
         if key in ["1", "2", "3", "4"]:
@@ -201,7 +227,10 @@ class ProfilerApp:
 
         elif key in ["K", "R", "D"]:
             self.change_mode(key)
-            
+        
+        elif key == "UP":
+            self.change_knickpoint_type()
+        
         elif key == "C":
             self.remove_last()
             
@@ -214,9 +243,16 @@ class ProfilerApp:
         elif key == "M":
             self.draw_map()
             
-        elif key == "P":
-            self.print_all(4, 3)
-            
+        # elif key == "P":
+        #     self.print_all(4, 3)
+
+    def change_knickpoint_type(self):
+        if self.mode == "K" and len(self.knick_points[self.active]) > 0:
+            kp = self.knick_points[self.active][-1]
+            kp[1] = (kp[1] + 1) % len(k_type)
+            #self.knick_points[self.active][-1][1] = (self.knick_points[self.active][-1][1] + 1) % 2
+            self.draw()    
+        
     def pick_point(self, event):
         """
         Pick a point in the active profile 
@@ -230,7 +266,7 @@ class ProfilerApp:
 
         # Select the proper option according with the drawing mode
         if self.mode == "K":
-            self.knick_points[self.active].append(ind)
+            self.knick_points[self.active].append([ind, 0])
             self.draw()
             
         elif self.mode == "R" and self.g_type == 3:
@@ -444,19 +480,22 @@ class ProfilerApp:
             dataset = driver.CreateDataSource(out_file)
             layer = dataset.CreateLayer("knickpoints", sp, ogr.wkbPoint)
 
-        # Create field
+        # Create fields
         layer.CreateField(ogr.FieldDefn("ksn", ogr.OFTReal))
+        layer.CreateField(ogr.FieldDefn("type", ogr.OFTInteger))
         
         # Save knickpoints
         for idx, perfil in enumerate(self.profiles):
             for kp in self.knick_points[idx]:
-                xi = perfil.get_x()[kp]
-                yi = perfil.get_y()[kp]
-                ksn = perfil.get_ksn()[kp]
+                xi = perfil.get_x()[kp[0]]
+                yi = perfil.get_y()[kp[0]]
+                ksn = perfil.get_ksn()[kp[0]]
+                tipo = int(kp[1])
                 
                 # Populate the field ksn
                 feat = ogr.Feature(layer.GetLayerDefn())
                 feat.SetField("ksn", ksn)
+                feat.SetField("type", tipo)
                 
                 # Create geometry
                 geom = ogr.Geometry(ogr.wkbPoint)
@@ -478,8 +517,8 @@ class ProfilerApp:
             self.figure.canvas.mpl_disconnect(self.pcid)
         
         np.save(self.basedir + "graph.npy", np.array([self]))
-        np.save(self.basedir + "saved_profiles.npy", self.profiles)
-        self.mode_txt.set_text("Files saved on '{0}'".format(self.basedir))
+        np.save(self.basedir + "graph_profiles.npy", self.profiles)
+        self.mode_txt.set_text('Files saved on "{0}"'.format(self.basedir))
         self.ax.figure.canvas.draw()
     
     def print_all(self, nrow, ncol, width=8.3, height=11.7):
@@ -522,24 +561,31 @@ class ProfilerApp:
         plt.close()    
 
 
-# TPROFILER CLASS (14/08/2017)
-# ============================
+def load_qgis_data(in_file):
+    profile_data = pickle.load(open(in_file, "rb"), encoding="latin1")
+    perfiles = []
+    for row in profile_data:
+        perfiles.append(TProfile(row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], 0))
+    return perfiles
 
 
-# CODE
-# ==========   
+# PROGRAM CODE
+# ============
+base_dir = os.path.dirname(in_file)
 if is_graph:
     pgraph = np.load(in_file)[0]
     pgraph.activate()
 else:
-    perfiles = np.load(in_file)
-    if not base_dir:
-        base_dir = os.path.dirname(in_file)
-    
+    if qgis_file:
+        perfiles = load_qgis_data(in_file)
+    else:
+        perfiles = np.load(in_file)
+
+    # Recalculate slope and ksn if desired
     if slope_reg_points:
         for perfil in perfiles:
             perfil.calculate_slope(slope_reg_points)
-        
+
     if ksn_reg_points:
         for perfil in perfiles:
             perfil.calculate_ksn(ksn_reg_points)

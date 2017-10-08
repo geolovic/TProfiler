@@ -366,7 +366,7 @@ def profiles_from_rivers(fac, dem, river_shapefile, id_field="", name_field="", 
     ind = np.argsort(idx_array)
     feat_array = feat_array[ind]
 
-    id_profile = 1
+    id_profile = 0
 
     # Process all the lines in river shapefile
     for feat in feat_array:
