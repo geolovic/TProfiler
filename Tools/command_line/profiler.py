@@ -28,7 +28,7 @@
 #  Version: 3.0
 #  March 02, 2017
 
-#  Last modified 23 June, 2017
+#  Last modified 08 October, 2017
 
 import numpy as np
 import math
@@ -492,7 +492,7 @@ def _profiles_to_points(out_shp, profiles):
         layer.CreateField(ogr.FieldDefn(campos[n], tipos[n]))
 
     # Get data from all the profiles
-    id_perfil = 1
+    id_perfil = 0
     for profile in profiles:
         xi = profile.get_x()
         yi = profile.get_y()

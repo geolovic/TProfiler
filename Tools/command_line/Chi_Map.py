@@ -45,8 +45,6 @@ parser.add_argument("out_shp", help="Output Chi shapefile")
 parser.add_argument("-th", "--threshold", help="Flow Accumulation threshold", type=float, default=0.)
 parser.add_argument("-u", "--units",  help="Threshold units", choices=["CELL", "MAP"], default="CELL")
 parser.add_argument("-b", "--basins", help="Basins shapefile", default="")
-parser.add_argument("-hd", "--heads",  help="Heads shapefile", default="")
-parser.add_argument("-id", "--id_field",  help="Id Field in heads shapefile", default="")
 parser.add_argument("-t", "--thetaref", type=float, default=0.45, help="Reference n/m value for chi index evaluation")
 dist_help = "Segment distance for output Chi shapefile. Distance = 0 will generate a point shapefile"
 parser.add_argument("-d", "--distance", type=float, default=0., help=dist_help)
@@ -62,8 +60,6 @@ fac = args.fac
 threshold = args.threshold
 units = args.units
 basin_shp = args.basins
-head_shp = args.heads
-id_field = args.id_field
 thetaref = args.thetaref
 reg_points = args.reg_points
 smooth = args.smooth
@@ -91,22 +87,13 @@ out_file = os.path.splitext(out_chi)[0] + ".npy"
 
 # PROGRAM CODE
 # =============
-def main(dem, fac, threshold, units, basin_shp, head_shp, id_field, thetaref, reg_points, smooth, distance, out_chi,
-         out_file):
+def main(dem, fac, threshold, units, basin_shp, thetaref, reg_points, smooth, distance, out_chi, out_file):
     # Obtenemos todas las cabeceras del DEM
     if threshold:
         heads = p.get_heads(fac, dem, threshold, units)
     else:
         heads = np.array([], dtype="float32").reshape((0, 6))
 
-    # Obtenemos los canales principales
-    if head_shp:
-        main_heads = p.heads_from_points(dem, head_shp, id_field)
-    else:
-        main_heads = np.array([], dtype="float32").reshape((0, 6))
-
-    # Combinamos las cabeceras de la capa de puntos con las cabeceras del DEM
-    heads = np.append(main_heads, heads, axis=0)
     if len(heads) == 0:
         return
     
@@ -133,5 +120,4 @@ def main(dem, fac, threshold, units, basin_shp, head_shp, id_field, thetaref, re
     p.profiles_to_shp(out_chi, out_profiles, distance)
 
 
-main(dem, fac, threshold, units, basin_shp, head_shp, id_field, thetaref, reg_points, smooth, distance, out_chi,
-     out_file)
+main(dem, fac, threshold, units, basin_shp, thetaref, reg_points, smooth, distance, out_chi, out_file)

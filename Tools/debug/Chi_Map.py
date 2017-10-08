@@ -42,10 +42,8 @@ fac = "../../test/data/in/darro25fac.tif"
 threshold = 1000
 units = "CELL"
 basin_shp = "../../test/data/in/cuencas.shp"
-head_shp = "../../test/data/in/main_heads.shp"
-id_field = "id"
 thetaref = 0.45
-reg_points = 4
+reg_points = 8
 smooth = 0
 distance = 0
 out_chi = "../../test/data/out/ChiMap_output_shp.shp"
@@ -54,23 +52,14 @@ out_file = "../../test/data/out/ChiMap_output_file.npy"
 
 # PROGRAM CODE
 # =============
-def main(dem, fac, threshold, units, basin_shp, head_shp, id_field, thetaref, reg_points, smooth, distance, out_chi,
-         out_file):
+def main(dem, fac, threshold, units, basin_shp, thetaref, reg_points, smooth, distance, out_chi, out_file):
 
-    # Obtenemos todas las cabeceras del DEM
+    # Get all the heads according to the given threshold
     if threshold:
         heads = p.get_heads(fac, dem, threshold, units)
     else:
         heads = np.array([], dtype="float32").reshape((0, 6))
 
-    # Obtenemos los canales principales
-    if head_shp:
-        main_heads = p.heads_from_points(dem, head_shp, id_field)
-    else:
-        main_heads = np.array([], dtype="float32").reshape((0, 6))
-
-    # Combinamos las cabeceras de la capa de puntos con las cabeceras del DEM
-    heads = np.append(main_heads, heads, axis=0)
     if len(heads) == 0:
         return
 
@@ -97,5 +86,4 @@ def main(dem, fac, threshold, units, basin_shp, head_shp, id_field, thetaref, re
     p.profiles_to_shp(out_chi, out_profiles, distance)
 
 
-main(dem, fac, threshold, units, basin_shp, head_shp, id_field, thetaref, reg_points, smooth, distance, out_chi,
-     out_file)
+main(dem, fac, threshold, units, basin_shp, thetaref, reg_points, smooth, distance, out_chi, out_file)
