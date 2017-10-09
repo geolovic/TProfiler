@@ -37,6 +37,7 @@ import struct
 DATA_TYPES = {1:"h", 2:"H", 3:"h", 4:"I", 5:"i", 6:"f",
               7:"D", 8:"h", 9:"i", 10:"f", 11:"D"}
 
+
 def Open(raster_path):
     """
     This function open a raster and returns a pRaster instance
