@@ -28,34 +28,18 @@
 #  Version: 1.1
 #  July 18, 2017
 
-#  Last modified July 18, 2017
+#  Last modified 29 October, 2017
 
 import numpy as np
 import profiler as p
 
 
-# ARGUMENTS
-# ===============
-dem = "../../test/data/in/darro25.tif"
-fac = "../../test/data/in/darro25fac.tif"
-river_shp = "../../test/data/in/rios.shp"
-id_field = "id"
-name_field = "name"
-out_file = "../../test/data/out/Chi_Profiles_test.npy"
-thetaref = 0.45
-reg_points = 4
-smooth = 0
-
-
 # PROGRAM CODE
 # =============
-def main(dem, fac, river_shp, out_file, id_field, name_field, thetaref, reg_points, smooth):
+def main(dem, fac, river_shp, out_file, id_field="", name_field="", thetaref=0.45, reg_points=4, smooth=0):
     # Extract profiles
     perfiles = p.profiles_from_rivers(fac, dem, river_shp, id_field=id_field, name_field=name_field, thetaref=thetaref,
-                                    reg_points=reg_points, smooth=smooth)
-    # Save profiles into
+                                      reg_points=reg_points, smooth=smooth)
+    # Save profiles into file
     perfiles = np.array(perfiles)
     np.save(out_file, perfiles)
-
-
-main(dem, fac, river_shp, out_file, id_field, name_field, thetaref, reg_points, smooth)

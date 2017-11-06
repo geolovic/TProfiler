@@ -18,24 +18,25 @@
 #  along with this program; if not, write to the Free Software
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #  MA 02110-1301, USA.
-
+#
 #  For additional information, contact to:
 #  Jose Vicente Perez Pena
 #  Dpto. Geodinamica-Universidad de Granada
 #  18071 Granada, Spain
 #  vperez@ugr.es // geolovic@gmail.com
+#
+#  Version: 1.2
+#  November, 6th 2017
 
-#  Version: 2.0
-#  August 20, 2017
-
-#  Last modified August 20, 2017
+#  Last modified November, 6th 2017
 
 import ogr
 import osr
 import gdal
-import math
 import os
+import math
 import numpy as np
+import pickle
 
 # QGIS TOOLBOX CODE
 # ===================
@@ -44,50 +45,41 @@ import numpy as np
 ##Output_channel_shapefile=output vector
 ##Threshold=number 0
 ##Units=selection CELLS;MAP
+##Use_heads=boolean True
+##Heads_shapefile=vector
+##Id_field=field Heads_shapefile
 ##Use_basins=boolean False
 ##Basin_shapefile=vector
 ##Thetaref=number 0.45
 ##Regression_points=number 4
 ##Smooth_window=number 0
 ##Segment_distance=number 0
+##Generate_dat_file=boolean False
 
 dem = str(DEM)
 fac = str(Flow_accumulation)
+out_chi = str(Output_channel_shapefile)
+out_file = bool(Generate_dat_file)
 threshold = float(Threshold)
 units = str(Units)
-head_shp = ""
-id_field = ""
-
+if Use_heads:
+    head_shp = str(Heads_shapefile)
+    id_field = str(Id_field)
+else:
+    head_shp = ""
+    id_field = ""
 if Use_basins:
     basin_shp = str(Basin_shapefile)
 else:
     basin_shp = ""
-
-out_chi = str(Output_channel_shapefile)
 thetaref = float(Thetaref)
 reg_points = int(Regression_points)
 smooth = float(Smooth_window)
 distance = float(Segment_distance)
 
 
-# # DEBUG ARGUMENTS
-# # ===============
-# dem = "../../test/data/in/darro25.tif"
-# fac = "../../test/data/in/darro25fac.tif"
-# threshold = 1000
-# units = "CELL"
-# basin_shp = ""
-# head_shp = ""
-# id_field = ""
-# thetaref = 0.45
-# reg_points = 4
-# smooth = 0
-# distance = 200
-# out_chi = "../../test/data/out/QGIS_ChiMap03.shp"
-
-
-# IMPORTED MODULES (20th August 2017)
-# ===================================
+# IMPORTED MODULES (November, 6th 2017)
+# =====================================
 PROFILE_DEFAULT = {'name': "", 'thetaref': 0.45, 'chi0': 0, 'reg_points': 4, 'srs': "", 'smooth': 0}
 
 NTYPES = {'int8': 3, 'int16': 3, 'int32': 5, 'int64': 5, 'uint8': 1, 'uint16': 2,
@@ -106,6 +98,10 @@ def get_heads(fac, dem, umbral, units="CELL"):
     :param units: *str -- Units of threshold ("MAP" / "CELL" ) (Default="MAP")
     :return: *numpy.array* -- Numpy.array with 6 columns [row, col, X, Y, Z, hid]
     """
+
+    # Si el umbral es cero, devolvemos lista vacia
+    if umbral == 0:
+        return np.array([], dtype="float32").reshape((0, 6))
 
     # Open fac and dem rasters
     facraster = open_raster(fac)
@@ -176,7 +172,7 @@ def heads_from_points(dem, point_shp, id_field=""):
         if field_defn.GetType() in [0, 12]:
             take_field = True
 
-    n = 0
+    n = 0.
     for feat in layer:
         geom = feat.GetGeometryRef()
         punto = (geom.GetX(), geom.GetY())
@@ -241,7 +237,7 @@ def get_profiles(fac, dem, heads, basin=None, tributaries=False, **kwargs):
     :param kwargs: TProfile arguments for profile creation
     :return: list of TProfile objects
     """
-    
+
     # Get facraster and demrasters as pRaster objects
     facraster = open_raster(fac)
     demraster = open_raster(dem)
@@ -283,9 +279,9 @@ def get_profiles(fac, dem, heads, basin=None, tributaries=False, **kwargs):
         # Calculate data for the first point
         pos = (int(head[0]), int(head[1]))
         point = demraster.cell_2_xy(pos)
-        area = facraster.get_cell_value(pos)
+        area = facraster.get_cell_value(pos) * demraster.cellsize ** 2  # Area in m^2
         if area == 0:
-            area = 1
+            area = demraster.cellsize ** 2
         z = demraster.get_cell_value(pos)
         distance = 0
 
@@ -308,7 +304,7 @@ def get_profiles(fac, dem, heads, basin=None, tributaries=False, **kwargs):
             # Data of the new point
             next_point = demraster.cell_2_xy(next_pos)
             z = demraster.get_cell_value(next_pos)
-            area = facraster.get_cell_value(next_pos)
+            area = facraster.get_cell_value(next_pos) * demraster.cellsize ** 2  # Area in m^2
             distance += math.sqrt((next_point[0] - point[0]) ** 2 + (next_point[1] - point[1]) ** 2)
 
             # Check if point is still inside basin (if specified and it is not the first head)
@@ -344,10 +340,9 @@ def get_profiles(fac, dem, heads, basin=None, tributaries=False, **kwargs):
             # Creamos el perfil
             perfil = TProfile(np.array(profile_data), facraster.cellsize, rid=head[5], thetaref=opt['thetaref'],
                               chi0=chi0, reg_points=opt['reg_points'], srs=srs, mouthdist=dist0, smooth=opt['smooth'])
-            
             out_profiles.append(perfil)
             # Rellenamos las posiciones procesadas con los valores de chi
-            # Y si hemos seleccionado tributaries, tambien se marcan las distancias
+            # Y si hemos seleccionado tributaries, tambiÃ©n se marcan las distancias
             n = 0
             distances = perfil.get_l(False)
             distances = distances[::-1]
@@ -357,153 +352,7 @@ def get_profiles(fac, dem, heads, basin=None, tributaries=False, **kwargs):
                 if tributaries:
                     dist_raster.set_cell_value(position, float(distances[n]))
                 n += 1
-            
         first_river = False
-        
-    return out_profiles
-
-
-def profiles_from_rivers(fac, dem, river_shapefile, id_field="", name_field="", tributaries=True, **kwargs):
-    """
-    Extracts profiles for rivers from a line shapefile. Rivers should have vertexes in all pixels from the original DEM
-    :param fac: str - String with the path to the flow accumulation raster
-    :param dem: str - String with the path to the DEM raster
-    :param river_shapefile: str - String with the path to the river shapefile
-    :param id_field: str - String with the name of the field that contains indexes to order features
-    :param name_field: str - String with the name of the field that contains feature's labels
-    :param tributaries: bool - Boolean to set whether tributaries are calculated or not
-    :param kwargs: TProfile arguments for profile creation
-    :return: list of TProfile objects
-    """
-
-    # Get facraster and demrasters as pRaster objects
-    facraster = open_raster(fac)
-    demraster = open_raster(dem)
-
-    # Get spatial Reference system from dem raster
-    srs = demraster.proj
-
-    # Update profile arguments if some of them have been specified
-    opt = PROFILE_DEFAULT
-    opt.update(kwargs)
-    opt['srs'] = srs
-
-    # Auxiliar PRaster object to record values of Chi
-    chi_raster = create_from_template(dem, gdal.GDT_Float32, nodata=0.0)
-
-    # Auxiliar PRaster object to record values of distance
-    if tributaries:
-        dist_raster = create_from_template(dem, gdal.GDT_Float32, nodata=0.0)
-
-    # Empty list to record output TProfile objects
-    out_profiles = []
-
-    # Open river shapefile and get layer
-    dataset = ogr.Open(river_shapefile)
-    layer = dataset.GetLayer(0)
-
-    # Get features and order them
-    layerdef = layer.GetLayerDefn()
-    fields = [layerdef.GetFieldDefn(idx).GetName() for idx in range(layerdef.GetFieldCount())]
-    n = 0
-    feat_list = []
-    idx_list = []
-
-    for feat in layer:
-        if id_field in fields:
-            hid = int(feat[id_field])
-        else:
-            hid = n
-        feat_list.append(feat)
-        idx_list.append(hid)
-        n += 1
-
-    feat_array = np.array(feat_list)
-    idx_array = np.array(idx_list, dtype="int32")
-    ind = np.argsort(idx_array)
-    feat_array = feat_array[ind]
-
-    id_profile = 1
-
-    # Process all the lines in river shapefile
-    for feat in feat_array:
-
-        # Get geometry and points
-        geom = feat.GetGeometryRef()
-        puntos = geom.GetPoints()
-
-        # List to store tuples with profile data
-        profile_data = []
-
-        # Second list to store processed positions (to record Chi values later on)
-        positions = []
-
-        # Calculate data for the first point
-        point = puntos[0]
-        pos = demraster.xy_2_cell(point)
-        area = facraster.get_cell_value(pos)
-        if area == 0:
-            area = 1
-        z = demraster.get_cell_value(pos)
-        distance = 0
-
-        # Add first point to profile data
-        profile_data.append((point[0], point[1], z, distance, area))
-
-        # Add position to position list
-        positions.append(pos)
-
-        # Start bucle to obtain next vertexes
-        for next_point in puntos[1:]:
-            next_pos = demraster.xy_2_cell(next_point)
-            z = demraster.get_cell_value(next_pos)
-            area = facraster.get_cell_value(next_pos)
-            distance += math.sqrt((next_point[0] - point[0]) ** 2 + (next_point[1] - point[1]) ** 2)
-
-            # Se anaden a las listas
-            profile_data.append((next_point[0], next_point[1], z, distance, area))
-            positions.append(next_pos)
-
-            # Guardamos el punto para siguiente ejecucion del bucle
-            point = tuple(next_point)
-
-        next_pos = demraster.xy_2_cell(next_point)
-        # Get Chi value for the last point (and distances if tributaries == True)
-        chi0 = chi_raster.get_cell_value(next_pos)
-        if tributaries:
-            dist0 = dist_raster.get_xy_value(next_point)
-        else:
-            dist0 = 0
-
-        if id_field in fields:
-            rid = feat[id_field]
-        else:
-            rid = id_profile
-
-        if name_field in fields:
-            name = feat[name_field]
-        else:
-            name = str(id_profile)
-
-        # Creamos el perfil
-        perfil = TProfile(np.array(profile_data), facraster.cellsize, rid=rid, name=name, thetaref=opt['thetaref'],
-                          chi0=chi0, reg_points=opt['reg_points'], srs=srs, mouthdist=dist0, smooth=opt['smooth'])
-        out_profiles.append(perfil)
-
-        # Rellenamos las posiciones procesadas con los valores de chi
-        # Y si hemos seleccionado tributaries, tambien se marcan las distancias
-        n = 0
-        distances = perfil.get_l(False)
-        distances = distances[::-1]
-        chi = perfil.get_chi(True)
-
-        for position in positions:
-            chi_raster.set_cell_value(position, float(chi[n]))
-            dist_raster.set_cell_value(position, float(distances[n]))
-            n += 1
-
-        id_profile += 1
-
     return out_profiles
 
 
@@ -549,7 +398,7 @@ def _profiles_to_points(out_shp, profiles):
         layer.CreateField(ogr.FieldDefn(campos[n], tipos[n]))
 
     # Get data from all the profiles
-    id_perfil = 1
+    id_perfil = 0
     for profile in profiles:
         xi = profile.get_x()
         yi = profile.get_y()
@@ -611,8 +460,8 @@ def _profiles_to_lines(out_shp, profiles, distance):
 
     id_perfil = 1
     for perfil in profiles:
-        # Transformamos la distancia a numero de celdas
-        # dx es el numero de puntos que tendra cada segmento (numero impar)
+        # Transformamos la distancia a número de celdas
+        # dx es el número de puntos que tendrá cada segmento (número impar)
         cellsize = perfil.dem_res
         if distance == 0:
             dx = len(perfil._data)
@@ -689,83 +538,51 @@ def _profiles_to_lines(out_shp, profiles, distance):
         id_perfil += 1
 
 
-def get_channels(fac, dem, heads, basin=None):
+def open_raster(raster_path):
     """
-    This function extracts profiles for all heads. It will complete river profiles until the edge of the dem or until
-    basin limits.
-    the dem or until the basin limits (if basin is specified).
-    :param fac: PRaster Raster with the flow accumulation
-    :param dem: PRaster Raster with the Digital Elevation Model
-    :param heads: List of tuples (row, col, X, Y, Z, "id")
-    :param basin: ogr.Geometry Polygon that represents one basin
-    :return: list of arrays representing channels (3 columns: x, y, z)
+    This function open a raster and returns a pRaster instance
+
+    :param raster_path: [str] Path to the raster to open
+    :return: pRaster class instance
     """
+    raster = gdal.Open(raster_path)
+    if not raster:
+        return
+    array = raster.GetRasterBand(1).ReadAsArray()
+    geot = raster.GetGeoTransform()
+    proj = raster.GetProjection()
+    nodata = raster.GetRasterBand(1).GetNoDataValue()
 
-    # Get facraster and demrasters as pRaster objects
-    facraster = open_raster(fac)
-    demraster = open_raster(dem)
+    return PRaster(array, geot, proj, nodata)
 
-    # Auxiliar PRaster object to record proccesed cells
-    aux_raster = create_from_template(dem, gdal.GDT_Byte, nodata=0)
 
-    # If all the heads come from the same basin, all of them will flow into first river
-    # there is no need to check if all vertexes are inside the basin, from the second head all will be inside
-    first_river = True
+def create_from_template(template, dtype=None, nodata=None):
+    """
+    This function creates a raster with the same parameters than the template. The created raster is "In Memory", to
+    save it use the method Save(path)
 
-    out_channels = []
-    # Process all the heads
-    for head in heads:
-        # List to store xyz tuples with channel data
-        chandata = []
+    :param template: *str* -- Path to the raster template
+    :param dtype:  *gdal.GDT type* -- Data type for the new raster (Default = None -> Takes dtype from template)
+    :param nodata: *float* -- NoData value for the new raster (Default = None -> Takes nodata from template)
+    :return: pRaster instance
+    """
+    temp_raster = gdal.Open(template)
+    temp_banda = temp_raster.GetRasterBand(1)
+    geot = temp_raster.GetGeoTransform()
+    proj = temp_raster.GetProjection()
+    xsize = temp_banda.XSize
+    ysize = temp_banda.YSize
 
-        # Calculate data for the first point
-        pos = (int(head[0]), int(head[1]))
-        point = demraster.cell_2_xy(pos)
-        z = demraster.get_cell_value(pos)
+    if dtype is None:
+        dtype = temp_banda.DataType
 
-        # Add first point to profile data (xyz)
-        chandata.append((point[0], point[1], z))
+    if nodata is None:
+        nodata = temp_banda.GetNoDataValue()
 
-        # 'Mark' aux raster to indicate that the pixel was processed
-        aux_raster.set_cell_value(pos, 1)
+    arrdata = np.empty((ysize, xsize)).astype(GTYPES[dtype])
+    arrdata.fill(nodata)
 
-        # Obtain the next point following the flow direction
-        next_pos = facraster.get_flow(pos)
-
-        # Start bucle to obtain vertexes following river's flow
-        while next_pos:
-
-            # Data of the new point
-            next_point = demraster.cell_2_xy(next_pos)
-            z = demraster.get_cell_value(next_pos)
-
-            # Check if point is still inside basin (if specified and it is not the first head)
-            if basin and first_river:
-                pto = ogr.Geometry(ogr.wkbPoint)
-                pto.AddPoint(next_point[0], next_point[1])
-                if not basin.Contains(pto):
-                    chandata.append((next_point[0], next_point[1], z))
-                    aux_raster.set_cell_value(next_pos, 1)
-                    break
-
-            # Se anaden a las listas
-            chandata.append((next_point[0], next_point[1], z))
-
-            # Se comprueba si esta "marcado";
-            # si lo esta, coge el valor de chi0 y termina el bucle
-            # sino, se marca (con un 1) y se coge el siguiente punto
-            if aux_raster.get_cell_value(next_pos) == 1:
-                break
-            else:
-                aux_raster.set_cell_value(next_pos, 1)
-
-            next_pos = facraster.get_flow(next_pos)
-
-        if len(chandata) > 5:
-            out_channels.append((int(head[5]), np.array(chandata)))
-        first_river = False
-
-    return out_channels
+    return PRaster(arrdata, geot, proj, nodata)
 
 
 class TProfile:
@@ -1274,75 +1091,7 @@ class TProfile:
         return best_theta
 
 
-def open_raster(raster_path):
-    """
-    This function open a raster and returns a pRaster instance
-
-    :param raster_path: [str] Path to the raster to open
-    :return: pRaster class instance
-    """
-    raster = gdal.Open(raster_path)
-    if not raster:
-        return
-    array = raster.GetRasterBand(1).ReadAsArray()
-    geot = raster.GetGeoTransform()
-    proj = raster.GetProjection()
-    nodata = raster.GetRasterBand(1).GetNoDataValue()
-
-    return PRaster(array, geot, proj, nodata)
-
-
-def create_raster(xsize, ysize, dtype=gdal.GDT_Int16, proj="", geot=(0.0, 1.0, 0.0, 0.0, 0.0, 1.0), nodata=0.0):
-    """
-    This function creates a pRaster object "In Memory", to save it use the method Save(path)
-
-    :param xsize: *int* -- Number of columns of the raster
-    :param ysize: *int* -- Number of rows of the raster
-    :param dtype: *gdal.GDT type* -- Data type of the new raster (Default = gdal.GDT_Int16)
-    :param proj:  *str* -- Projection of the new raster in wkt (Default = "")
-    :param geot:  *tuple* -- Geotransform matrix for the new raster (Default = (0.0, 1.0, 0.0, 0.0, 0.0, 1.0))
-    :param nodata: *float* -- Nodata value for the new raster (Default = 0.0)
-    :return: pRaster instance
-    """
-
-    # Creates an empty array and fill up with nodata values
-    arrdata = np.empty((ysize, xsize)).astype(GTYPES[dtype])
-    arrdata.fill(nodata)
-
-    return PRaster(arrdata, proj, geot, nodata)
-
-
-def create_from_template(template, dtype=None, nodata=None):
-    """
-    This function creates a raster with the same parameters than the template. The created raster is "In Memory", to
-    save it use the method Save(path)
-
-    :param template: *str* -- Path to the raster template
-    :param dtype:  *gdal.GDT type* -- Data type for the new raster (Default = None -> Takes dtype from template)
-    :param nodata: *float* -- NoData value for the new raster (Default = None -> Takes nodata from template)
-    :return: pRaster instance
-    """
-    temp_raster = gdal.Open(template)
-    temp_banda = temp_raster.GetRasterBand(1)
-    geot = temp_raster.GetGeoTransform()
-    proj = temp_raster.GetProjection()
-    xsize = temp_banda.XSize
-    ysize = temp_banda.YSize
-
-    if dtype is None:
-        dtype = temp_banda.DataType
-
-    if nodata is None:
-        nodata = temp_banda.GetNoDataValue()
-
-    arrdata = np.empty((ysize, xsize)).astype(GTYPES[dtype])
-    arrdata.fill(nodata)
-
-    return PRaster(arrdata, geot, proj, nodata)
-
-
 class PRaster:
-
     def __init__(self, array, geot=(0.0, 1.0, 0.0, 0.0, 0.0, -1.0), proj="", nodata=None):
         """
         Class to manipulate Raster objects
@@ -1465,14 +1214,14 @@ class PRaster:
         vec_adyacentes = [(-1, 0), (0, -1), (0, 1), (1, 0)]
         vec_diagonales = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
 
-        # Suponemos que el valor  maximo es el mismo
+        # Suponemos que el valor máximo es el mismo
         cell_value = self.get_cell_value(cell)
 
         max_value = cell_value
         max_pos = cell
 
         # La celda a la que va el flujo no tiene porque ser la de mayor valor de flow accumulation
-        # En el caso de que el flujo haga una L la maxima es la diagonal, pero el flujo va a la adyacente
+        # En el caso de que el flujo haga una L la máxima es la diagonal, pero el flujo va a la adyacente
         # Por ello primero se comprueban las celdas adyacentes y luego las diagonales
 
         for n in vec_adyacentes:
@@ -1507,7 +1256,7 @@ class PRaster:
         :param path: *str* -- Path where new raster will be saved
         """
 
-        if self.array.dtype not in NTYPES.keys():
+        if str(self.array.dtype) not in NTYPES.keys():
             return
         else:
             tipo = NTYPES[str(self.array.dtype)]
@@ -1523,23 +1272,44 @@ class PRaster:
 
 # PROGRAM CODE
 # =============
-def main(dem, fac, threshold, units, basin_shp, head_shp, id_field, thetaref, reg_points, smooth, distance, out_chi):
-    progress.setText("Processing heads ...")
-    # Obtenemos todas las cabeceras del DEM
+def save_profiles(path, profiles):
+    """
+    Saves the profiles in lists with pickle module
+    Each profile will be a tuple with (_data, dem_res, rid, thetaref, chi0, slope_reg_points, _srs, name, _mouthdist, 0)
+
+    :param path: Full path to the file where profiles will be saved
+    :param profiles: List of TProfile objects
+    """
+    out_f = open(path, "wb")
+    out_p = []
+    for perfil in profiles:
+        chi0 = perfil._data[perfil.n_points - 1, 5]
+        out_p.append((perfil._data, perfil.dem_res, perfil.rid, perfil.thetaref, chi0, perfil.slope_reg_points,
+                      perfil._srs, perfil.name, perfil._mouthdist, 0))
+
+    pickle.dump(out_p, out_f)
+
+
+def main(dem, fac, out_chi, out_file=False, threshold=0, units="CELL", basin_shp="", head_shp="",  id_field="",
+         thetaref=0.45, reg_points=5, smooth=0, distance=0):
+
+    # Get all the heads according to the given threshold
     if threshold:
         heads = get_heads(fac, dem, threshold, units)
     else:
         heads = np.array([], dtype="float32").reshape((0, 6))
 
+    # Obtenemos todas las cabeceras de la capa de puntos, y combinamos con cabeceras anteriores
+    if head_shp:
+        main_heads = heads_from_points(dem, head_shp, id_field=id_field)
+        heads = np.append(main_heads, heads, axis=0)
+
     if len(heads) == 0:
         return
 
-    progress.setText("Heads processed")
-    
     # Lista vacia para perfiles de salida
     out_profiles = []
 
-    progress.setText("Procesing channels ...")
     if basin_shp:
         dataset = ogr.Open(basin_shp)
         layer = dataset.GetLayer(0)
@@ -1548,18 +1318,19 @@ def main(dem, fac, threshold, units, basin_shp, head_shp, id_field, thetaref, re
             heads_inside = heads_inside_basin(heads, basin_geom)
             if len(heads_inside) > 0:
                 out_profiles.extend(get_profiles(fac, dem, heads_inside, basin=basin_geom, tributaries=True,
-                                                 thetaref=thetaref, reg_points=reg_points, smooth=smooth))
+                                                   thetaref=thetaref, reg_points=reg_points, smooth=smooth))
     else:
         out_profiles.extend(get_profiles(fac, dem, heads, tributaries=True, thetaref=thetaref, reg_points=reg_points,
-                                         smooth=smooth))
-    progress.setText("Channels processed")
+                                           smooth=smooth))
 
-    # Save output profiles as a list of TProfiles
-    # np.save(out_file, np.array(out_profiles))
+    # Save output profiles
+    if out_file:
+        out_file = os.path.splitext(out_chi)[0] + ".dat"
+        save_profiles(out_file, out_profiles)
 
     # Save output profiles in a shapefile
     profiles_to_shp(out_chi, out_profiles, distance)
-    progress.setText("Shapefile created")
 
 
-main(dem, fac, threshold, units, basin_shp, head_shp, id_field, thetaref, reg_points, smooth, distance, out_chi)
+main(dem, fac, out_chi, out_file, threshold, units, basin_shp, head_shp, id_field, thetaref, reg_points, smooth,
+     distance)

@@ -192,6 +192,8 @@ def test04():
     for ax in (ax1, ax2, ax3, ax4):
         ax.set_xscale("log")
         ax.set_yscale("log")
+        ax.set_xlim((1000000, 100000000))
+        ax.set_ylim((0.001, 1))
 
     ai = perfil.get_area(True)
     s1 = perfil.get_slope()
@@ -255,6 +257,8 @@ def test05():
         ax1.plot(ai, si, "b+")
         ax1.set_xscale("log")
         ax1.set_yscale("log")
+        ax1.set_xlim((1000000, 100000000))
+        ax1.set_ylim((0.001, 1))
         ax1.set_title("reg_points = " + str(reg_points) + " (normal elevations)")
 
         perfil.calculate_slope(reg_points, True)
@@ -262,6 +266,8 @@ def test05():
         ax2.plot(ai, si, "b+")
         ax2.set_xscale("log")
         ax2.set_yscale("log")
+        ax2.set_xlim((1000000, 100000000))
+        ax2.set_ylim((0.001, 1))
         ax2.set_title("reg_points = " + str(reg_points) + " (raw elevations)")
 
         reg_points += 4

@@ -1,6 +1,6 @@
 # -*- coding: iso-8859-15 -*-
 #
-#  ProfilerApp1.py
+#  ProfilerApp.py
 #
 #  Copyright (C) 2017  J. Vicente Perez, Universidad de Granada
 #
@@ -25,10 +25,10 @@
 #  18071 Granada, Spain
 #  vperez@ugr.es // geolovic@gmail.com
 
-#  Version: 2
-#  October 08, 2017
+#  Version: 1.2
+#  November, 6th 2017
 
-#  Last modified October 08, 2017
+#  Last modified November, 6th 2017
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -52,15 +52,6 @@ slope_reg_points = int(Slope_Regression_points)
 ksn_reg_points = int(Ksn_Regression_points)
 
 
-# DEBUG ARGUMENTS
-# ===============
-#in_file = "/Users/vicen/GIS/01_PROYECTOS/WSierra_40/gisdata/chi_analysis/main_profiles"
-#qgis_file = True
-#is_graph = False
-#slope_reg_points = 0
-#ksn_reg_points = 0
-
-
 # Disable some keymap characters that interfere with graph key events
 plt.rcParams["keymap.xscale"] = [""]
 plt.rcParams["keymap.yscale"] = [""]
@@ -75,17 +66,20 @@ class ProfilerApp:
     Allows selecting knickpoints and do regressions on chi-elevation profiles
     """
     gr_types = {1: 'longitudinal', 2: "area-slope", 3: "chi", 4: "ksn"}
-    
+
     def __init__(self, figure, profiles, basedir=""):
         """
         :param figure: Matplotlib.Figure to draw graphics
         :param profiles: numpy.array with TProfiles objects
         :param basedir: Base directory to save regressions and knickpoints
         """
-        if basedir == "":
-            self.basedir = basedir
-        else:
-            self.basedir = basedir + "/"
+        # Create the output folder (for knickpoints and regressions)
+        if basedir[-1] == "/":
+            basedir = basedir[:-1]
+        self.basedir = basedir + "/out_files"
+        if not os.path.exists(self.basedir):
+            os.mkdir(self.basedir)
+
         self.figure = figure
         self.ax = figure.add_subplot(111)
         self.g_type = 1
@@ -101,9 +95,9 @@ class ProfilerApp:
         self.dam_points = []  # Temporary list of 2 elements [ind0, ind1]
         self.activate()
         self.draw()
-   
+
     def activate(self):
-        self.kcid = self.figure.canvas.mpl_connect("key_press_event", self.key_input)      
+        self.kcid = self.figure.canvas.mpl_connect("key_press_event", self.key_input)
 
     # DRAWING METHODS
     # ===============
@@ -138,7 +132,7 @@ class ProfilerApp:
         # Draw knickpoints
         for k in self.knick_points[self.active]:
             self.ax.plot(li[k[0]], zi[k[0]], k_type[k[1]], mew=0.5, mec="k", ms=10)
-        
+
     def _draw_area_slope(self):
         """
         Draw area-slope log-log plot for the active profile
@@ -203,7 +197,7 @@ class ProfilerApp:
 
     def _mode_inf(self):
         """
-        Set the text to inform about the drawing mode 
+        Set the text to inform about the drawing mode
         R - Regresion mode
         K - Knickpoint mode
         D - Dam remover mode
@@ -212,14 +206,14 @@ class ProfilerApp:
             self.mode_txt.set_text("Mode: {0}".format(self.mode))
         else:
             self.mode_txt.set_text("")
-                       
+
     # EVENT METHODS
     # =============
     def key_input(self, event):
         """
         Controls keyboard events to add functionality to application
         :param event: keypress event
-        
+
         Keyboard actions:
             1-4: Changes the graphic type [long, area/slope, chi, ksn]
             R: Enters in regression mode
@@ -234,41 +228,38 @@ class ProfilerApp:
         if key in ["1", "2", "3", "4"]:
             self.g_type = int(key)
             self.draw()
-                        
+
         elif key in ["LEFT", "RIGHT"]:
             self.next_profile(key_dict[key])
 
         elif key in ["K", "R", "D"]:
             self.change_mode(key)
-        
+
         elif key == "UP":
             self.change_knickpoint_type()
-        
+
         elif key == "C":
             self.remove_last()
-            
+
         elif key in ["+", "-"] and self.g_type in [2, 4]:
             self.change_reg_points(key_dict[key])
-        
+
         elif key == "S":
             self.save()
-            
-#        elif key == "M":
-#            self.draw_map()
-            
-        # elif key == "P":
-        #     self.print_all(4, 3)
+
+        # elif key == "M":
+        #     self.draw_map()
 
     def change_knickpoint_type(self):
         if self.mode == "K" and len(self.knick_points[self.active]) > 0:
             kp = self.knick_points[self.active][-1]
             kp[1] = (kp[1] + 1) % len(k_type)
-            #self.knick_points[self.active][-1][1] = (self.knick_points[self.active][-1][1] + 1) % 2
-            self.draw()    
-        
+            # self.knick_points[self.active][-1][1] = (self.knick_points[self.active][-1][1] + 1) % 2
+            self.draw()
+
     def pick_point(self, event):
         """
-        Pick a point in the active profile 
+        Pick a point in the active profile
         :param event: matplotlib picker event
         """
         # In the case that many points are picked (true if the profile has several points). Take the center one.
@@ -281,24 +272,34 @@ class ProfilerApp:
         if self.mode == "K":
             self.knick_points[self.active].append([ind, 0])
             self.draw()
-            
+
         elif self.mode == "R" and self.g_type == 3:
             self.reg_points.append(ind)
             chi = self.profiles[self.active].get_chi()[ind]
             zi = self.profiles[self.active].get_z()[ind]
             self.ax.plot(chi, zi, "k+")
             self.figure.canvas.draw()
-            self.create_regression()   
-            
+            self.create_regression()
+
+        elif self.mode == "D" and self.g_type == 3:
+            self.dam_points.append(ind)
+            chi = self.profiles[self.active].get_chi()
+            zi = self.profiles[self.active].get_z()
+            c_point = chi[ind]
+            z_point = zi[ind]
+            self.ax.plot(c_point, z_point, "k+", markersize=7)
+            self.figure.canvas.draw()
+            self.remove_dam()
+
         elif self.mode == "D" and self.g_type == 1:
             self.dam_points.append(ind)
             li = self.profiles[self.active].get_l() / 1000.
             zi = self.profiles[self.active].get_z()
-            l_point = li[ind]
+            c_point = li[ind]
             z_point = zi[ind]
-            self.ax.plot(l_point, z_point, "k+", markersize=7)
+            self.ax.plot(c_point, z_point, "k+", markersize=7)
             self.figure.canvas.draw()
-            self.remove_dam()
+            self.remove_dam2()
 
     def remove_dam(self):
         """
@@ -307,6 +308,9 @@ class ProfilerApp:
         """
         if len(self.dam_points) < 2:
             return
+        elif len(self.dam_points) > 2:
+            self.dam_points = []
+            self.draw()
 
         p1 = self.dam_points[0]
         p2 = self.dam_points[1]
@@ -314,9 +318,47 @@ class ProfilerApp:
             tmp = p2
             p2 = p1
             p1 = tmp
-            
+
         perfil = self.profiles[self.active]
-        
+
+        # Create a straigt-line between both points
+        chi = perfil.get_chi()
+        zi = perfil.get_z()
+        arr_inds = list(range(p1, p2))
+
+        pto1 = (chi[p1], zi[p1])
+        pto2 = (chi[p2], zi[p2])
+
+        m = (pto2[1] - pto1[1]) / float(pto2[0] - pto1[0])
+        b = pto1[1] - (m * pto1[0])
+
+        xi = chi[arr_inds]
+        yi = xi * m + b
+
+        perfil._data[p1:p2, 2] = yi
+        perfil.calculate_slope(perfil.slope_reg_points)
+        perfil.calculate_ksn(perfil.ksn_reg_points)
+        self.dam_points = []
+        self.draw()
+
+    def remove_dam2(self):
+        """
+        Removes points that correspond with a dam in the longitudinal profile
+        It will take points from self.dam_points[] >> list with two points (positions)
+        """
+        if len(self.dam_points) < 2:
+            return
+        elif len(self.dam_points) > 2:
+            self.dam_points = []
+            self.draw()
+
+        p1 = self.dam_points[0]
+        p2 = self.dam_points[1]
+        if p1 > p2:
+            p1, p2 = p2, p1
+
+        perfil = self.profiles[self.active]
+
         # Create a straigt-line between both points
         li = perfil.get_l() / 1000.
         zi = perfil.get_z()
@@ -324,12 +366,13 @@ class ProfilerApp:
 
         pto1 = (li[p1], zi[p1])
         pto2 = (li[p2], zi[p2])
-        
+
         m = (pto2[1] - pto1[1]) / float(pto2[0] - pto1[0])
         b = pto1[1] - (m * pto1[0])
-        
+
         xi = li[arr_inds]
         yi = xi * m + b
+
         perfil._data[p1:p2, 2] = yi
         perfil.calculate_slope(perfil.slope_reg_points)
         perfil.calculate_ksn(perfil.ksn_reg_points)
@@ -343,6 +386,10 @@ class ProfilerApp:
         """
         if len(self.reg_points) < 2:
             return
+        if len(self.reg_points) > 2:
+            self.reg_points = []
+            self.draw()
+            return
 
         p1 = self.reg_points[0]
         p2 = self.reg_points[1]
@@ -350,21 +397,19 @@ class ProfilerApp:
             tmp = p2
             p2 = p1
             p1 = tmp
-            
+
         perfil = self.profiles[self.active]
-        
-        progress.setText("Hasta aquÃÂ­, guay")
-        
+
         # Regression in chi plot
-        chi = perfil.get_chi()[p1:p2+1]
-        zi = perfil.get_z()[p1:p2+1]
+        chi = perfil.get_chi()[p1:p2 + 1]
+        zi = perfil.get_z()[p1:p2 + 1]
         poli, scr = np.polyfit(chi, zi, deg=1, full=True)[:2]
-        #r2 = float(1 - scr/(zi.size * zi.var()))
+        r2 = float(1 - scr / (zi.size * zi.var()))
         xc = np.linspace(chi[0], chi[-1], num=5)
         yc = np.polyval(poli, xc)
         arr = np.array((xc, yc)).T
-        self.regressions[self.active].append((p1, p2, poli[0], poli[1], arr))
-        
+        self.regressions[self.active].append((p1, p2, poli[0], poli[1], arr, r2))
+
         # Once the regression is created, force redraw and clear reg_point list
         self.reg_points = []
         self.draw()
@@ -393,7 +438,7 @@ class ProfilerApp:
             self.draw()
         elif self.mode == "R" and len(self.regressions[self.active]) > 0:
             self.regressions[self.active].pop()
-            self.draw()          
+            self.draw()
 
     def change_reg_points(self, increment):
         """
@@ -408,7 +453,7 @@ class ProfilerApp:
             reg_points = perfil.ksn_reg_points + increment
             if reg_points > 2:
                 perfil.calculate_ksn(reg_points)
-                           
+
         self.draw()
 
     def next_profile(self, idx):
@@ -418,39 +463,42 @@ class ProfilerApp:
         self.active += idx
         self.active %= self.n_profiles
         self.draw()
-            
-#    def draw_map(self):
-#        """
-#        Draws a plot with all the analyzed profiles and highlight the active one
-#        It also draws knickpoints.
-#        """
-#        # Create a new Figure and Axes        
-#        figure = plt.figure()
-#        ax = figure.add_subplot(111)
-#        
-#        # Draw a map with all the profiles
-#        for idx, perfil in enumerate(self.profiles):
-#            xi = perfil.get_x()
-#            yi = perfil.get_y()
-#            ax.plot(xi, yi, c="0.6", lw=0.5)
-#            # Draw the nickpoints
-#            for k in self.knick_points[idx]:
-#                ax.plot(xi[k], yi[k], "r*", mew=0.5, mec="k", ms=5)    
-#        
-#        # Draw the active profile with different color            
-#        perfil = self.profiles[self.active]
-#        xi = perfil.get_x()
-#        yi = perfil.get_y()
-#        ax.plot(xi, yi, c="c", lw=1)
-        
+
+    def draw_map(self):
+        """
+        Draws a plot with all the analyzed profiles and highlight the active one
+        It also draws knickpoints.
+        """
+        # Create a new Figure and Axes
+        figure = plt.figure()
+        ax = figure.add_subplot(111)
+
+        # Draw a map with all the profiles
+        for idx, perfil in enumerate(self.profiles):
+            xi = perfil.get_x()
+            yi = perfil.get_y()
+            ax.plot(xi, yi, c="0.6", lw=0.5)
+            # Draw the nickpoints
+            for k in self.knick_points[idx]:
+                ax.plot(xi[k[0]], yi[k[0]], k_type[k[1]], mew=0.5, mec="k", ms=7)
+
+                # Draw the active profile with different color
+        perfil = self.profiles[self.active]
+        xi = perfil.get_x()
+        yi = perfil.get_y()
+        ax.plot(xi, yi, c="c", lw=1)
+        # Draw knickpoints of the active profile bigger
+        for k in self.knick_points[self.active]:
+            ax.plot(xi[k[0]], yi[k[0]], k_type[k[1]], mew=0.5, mec="k", ms=10)
+
     # SAVING METHODS
-    # =============   
+    # =============
     def _save_regressions(self, out_file):
-        
+
         sp = osr.SpatialReference()
         sp.ImportFromWkt(self.profiles[self.active].get_projection())
         driver = ogr.GetDriverByName("ESRI Shapefile")
-        
+
         # Check if dataset already exists, create dataset and get layer
         if os.path.exists(out_file):
             dataset = driver.Open(out_file, 1)
@@ -459,11 +507,11 @@ class ProfilerApp:
         else:
             dataset = driver.CreateDataSource(out_file)
             layer = dataset.CreateLayer("regresions", sp, ogr.wkbLineString)
-            
+
         # Create fields
         layer.CreateField(ogr.FieldDefn("ksn", ogr.OFTReal))
-        #layer.CreateField(ogr.FieldDefn("r2", ogr.OFTReal))
-         
+        layer.CreateField(ogr.FieldDefn("r2", ogr.OFTReal))
+
         # Save the regressions
         for idx, perfil in enumerate(self.profiles):
             for reg in self.regressions[idx]:
@@ -471,7 +519,7 @@ class ProfilerApp:
                 yi = perfil.get_y()[reg[0]:reg[1]]
                 feat = ogr.Feature(layer.GetLayerDefn())
                 feat.SetField("ksn", reg[2])
-                #feat.SetField("r2", reg[5])
+                feat.SetField("r2", reg[5])
 
                 # Creamos geometria
                 geom = ogr.Geometry(ogr.wkbLineString)
@@ -484,7 +532,7 @@ class ProfilerApp:
         sp = osr.SpatialReference()
         sp.ImportFromWkt(self.profiles[self.active].get_projection())
         driver = ogr.GetDriverByName("ESRI Shapefile")
-    
+
         # Check if dataset already exists, create dataset and get layer
         if os.path.exists(out_file):
             dataset = driver.Open(out_file, 1)
@@ -498,7 +546,7 @@ class ProfilerApp:
         # Create fields
         layer.CreateField(ogr.FieldDefn("ksn", ogr.OFTReal))
         layer.CreateField(ogr.FieldDefn("type", ogr.OFTInteger))
-        
+
         # Save knickpoints
         for idx, perfil in enumerate(self.profiles):
             for kp in self.knick_points[idx]:
@@ -506,86 +554,39 @@ class ProfilerApp:
                 yi = perfil.get_y()[kp[0]]
                 ksn = perfil.get_ksn()[kp[0]]
                 tipo = int(kp[1])
-                
+
                 # Populate the field ksn
                 feat = ogr.Feature(layer.GetLayerDefn())
                 feat.SetField("ksn", ksn)
                 feat.SetField("type", tipo)
-                
+
                 # Create geometry
                 geom = ogr.Geometry(ogr.wkbPoint)
                 geom.AddPoint(xi, yi)
                 feat.SetGeometry(geom)
                 layer.CreateFeature(feat)
-    
+
     def save(self):
         """
         Saves selected knickpoints and regressions into shapefiles
         """
-        out_knicks = self.basedir + "knickpoints.shp"
-        out_regres = self.basedir + "regressions.shp"
-        self._save_regressions(out_regres)    
+        out_knicks = self.basedir + "/knickpoints.shp"
+        out_regres = self.basedir + "/regressions.shp"
+        self._save_regressions(out_regres)
         self._save_knickpoints(out_knicks)
-        
+
         if self.mode:
             self.mode = None
             self.figure.canvas.mpl_disconnect(self.pcid)
-        
-#        np.save(self.basedir + "graph.npy", np.array([self]))
-#        np.save(self.basedir + "graph_profiles.npy", self.profiles)
+
+        # np.save(self.basedir + "/graph.npy", np.array([self]))
+        # np.save(self.basedir + "/graph_profiles.npy", self.profiles)
         self.mode_txt.set_text('Files saved on "{0}"'.format(self.basedir))
         self.ax.figure.canvas.draw()
-    
-#    def print_all(self, nrow, ncol, width=8.3, height=11.7):
-#        """
-#        Print all profiles in a single graphic (or graphics)
-#        """
-#        max_ksn = 0
-#        for perfil in self.profiles:
-#            local_max = perfil.get_ksn().max()
-#            if local_max > max_ksn:
-#                max_ksn = local_max
-#            
-#        label = True
-#        fig = plt.figure(figsize=(width, height))   # A4 size
-#        first = self.profiles[0].name
-#        last = self.profiles[0].name
-#        for n, perfil in enumerate(self.profiles):
-#            if n > (nrow * ncol):
-#                fig.tight_layout(pad=0.4)
-#                fig.savefig(self.basedir + first + "-" + last + ".eps")
-#                first = perfil.name
-#                plt.close()
-#                fig = plt.figure(figsize=(width, height))
-#                label = True
-#            
-#            ax = fig.add_subplot(nrow, ncol, n + 1)
-#            ax.plot(perfil.get_l() / 1000, perfil.get_z(), linewidth=0.75, color="b")
-#            ax.set_title(perfil.name, fontsize=12)
-#            ax2 = ax.twinx()
-#            ax2.plot(perfil.get_l()/1000, perfil.get_ksn(), linewidth=0.75, color="olive")
-#            ax2.set_ylim(ymax=max_ksn)
-#            if label:
-#                ax.set_ylabel("Elevation (m)")
-#                ax.set_xlabel("Distance (km)")
-#                ax2.set_ylabel("Ksn index")
-#                label = False
-#            last = perfil.name
-#        fig.tight_layout(pad=0.4)
-#        fig.savefig(self.basedir + first + "-" + last + ".eps")
-#        plt.close()    
 
 
-def load_qgis_data(in_file):
-    profile_data = pickle.load(open(in_file, "rb"))
-    perfiles = []
-    for row in profile_data:
-        perfiles.append(TProfile(row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], 0))
-    return perfiles
-
-
-# IMPORTED TProfile class (08/October/2017)
-# =========================================
+# IMPORTED MODULES (November, 6th 2017)
+# =====================================
 class TProfile:
     """
     Properties:
@@ -1094,18 +1095,27 @@ class TProfile:
 
 # PROGRAM CODE
 # ============
-base_dir = os.path.dirname(in_file)
+def load_qgis_data(in_file):
+    profile_data = pickle.load(open(in_file, "rb"), encoding="latin1")
+    perfiles = []
+    for row in profile_data:
+        perfiles.append(TProfile(row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], 0))
+    return perfiles
+
+
 perfiles = load_qgis_data(in_file)
-   
+
 # Recalculate slope and ksn if desired
 if slope_reg_points:
     for perfil in perfiles:
         perfil.calculate_slope(slope_reg_points)
+
 if ksn_reg_points:
     for perfil in perfiles:
         perfil.calculate_ksn(ksn_reg_points)
-# Create figure and graph
+
+basedir = os.path.dirname(in_file)
 fig = plt.figure()
-pgraph = ProfilerApp(fig, perfiles, base_dir)
+pgraph = ProfilerApp(fig, perfiles, basedir)
 
 plt.show()

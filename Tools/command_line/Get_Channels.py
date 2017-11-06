@@ -25,9 +25,9 @@
 #  18071 Granada, Spain
 #  vperez@ugr.es // geolovic@gmail.com
 
-#  Version: 1.0
-#  July 14, 2017
-#  Last modified September 29, 2017
+#  Version: 1.2
+#  November 6th, 2017
+#  Last modified November 6th, 2017
 
 import ogr
 import osr
@@ -36,7 +36,6 @@ import numpy as np
 import os
 import profiler as p
 import argparse
-
 
 
 # ARGUMENT PARSER
@@ -57,17 +56,17 @@ args = parser.parse_args()
 # =========
 dem = args.dem
 fac = args.fac
+out_shp = args.out_shp
 threshold = args.threshold
 units = args.units
 basin_shp = args.basins
 head_shp = args.heads
 id_field = args.id_field
-out_shp = args.out_shp
 
 
 # PROGRAM CODE
 # =============
-def main(dem, fac, threshold, units, basin_shp, head_shp, id_field, out_shp):
+def main(dem, fac, out_shp, threshold=0, units="CELL", head_shp="", id_field="", basin_shp=""):
 
     # Obtenemos todas las cabeceras del DEM
     if threshold:
@@ -87,8 +86,8 @@ def main(dem, fac, threshold, units, basin_shp, head_shp, id_field, out_shp):
     if heads.shape[0] == 0:
         return
 
+    # Obtenemos los diferentes poligonos de las cuencas
     if basin_shp:
-        # Obtenemos los diferentes poligonos de las cuencas
         dataset = ogr.Open(basin_shp)
         layer = dataset.GetLayer(0)
 
@@ -130,4 +129,5 @@ def main(dem, fac, threshold, units, basin_shp, head_shp, id_field, out_shp):
         feature.SetField("id", name)
         layer.CreateFeature(feature)
 
-main(dem, fac, threshold, units, basin_shp, head_shp, id_field, out_shp)
+
+main(dem, fac, out_shp, threshold, units, head_shp, id_field, basin_shp)

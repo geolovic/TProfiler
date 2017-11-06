@@ -25,10 +25,10 @@
 #  18071 Granada, Spain
 #  vperez@ugr.es // geolovic@gmail.com
 
-#  Version: 1.1
-#  August 12, 2017
+#  Version: 1.2
+#  November, 6th 2017
 
-#  Last modified September 29, 2017
+#  Last modified November, 6th 2017
 
 
 import numpy as np
@@ -66,13 +66,12 @@ smooth = args.smooth
 
 # PROGRAM CODE
 # =============
-def main(dem, fac, river_shp, out_file, id_field, name_field, thetaref, reg_points, smooth):
+def main(dem, fac, river_shp, out_file, id_field="", name_field="", thetaref=0.45, reg_points=4, smooth=0):
     # Extract profiles
     perfiles = p.profiles_from_rivers(fac, dem, river_shp, id_field=id_field, name_field=name_field, thetaref=thetaref,
                                       reg_points=reg_points, smooth=smooth)
     # Save profiles into file
     perfiles = np.array(perfiles)
     np.save(out_file, perfiles)
-
 
 main(dem, fac, river_shp, out_file, id_field, name_field, thetaref, reg_points, smooth)

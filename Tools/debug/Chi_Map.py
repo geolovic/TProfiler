@@ -18,47 +18,39 @@
 #  along with this program; if not, write to the Free Software
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #  MA 02110-1301, USA.
-
+#
 #  For additional information, contact to:
 #  Jose Vicente Perez Pena
 #  Dpto. Geodinamica-Universidad de Granada
 #  18071 Granada, Spain
 #  vperez@ugr.es // geolovic@gmail.com
+#
+#  Version: 2
+#  29 October 2017
 
-#  Version: 1.1
-#  June 21, 2017
-
-#  Last modified June 23, 2017
+#  Last modified 30 October 2017
 
 import ogr
+import os
 import numpy as np
 import profiler as p
 
 
-# ARGUMENTS
-# ===============
-dem = "../../test/data/in/darro25.tif"
-fac = "../../test/data/in/darro25fac.tif"
-threshold = 1000
-units = "CELL"
-basin_shp = "../../test/data/in/cuencas.shp"
-thetaref = 0.45
-reg_points = 8
-smooth = 0
-distance = 0
-out_chi = "../../test/data/out/ChiMap_output_shp.shp"
-out_file = "../../test/data/out/ChiMap_output_file.npy"
-
-
 # PROGRAM CODE
 # =============
-def main(dem, fac, threshold, units, basin_shp, thetaref, reg_points, smooth, distance, out_chi, out_file):
+def main(dem, fac, out_chi, out_file=False, threshold=0, units="CELL", basin_shp="", head_shp="",  id_field="",
+         thetaref=0.45, reg_points=5, smooth=0, distance=0):
 
     # Get all the heads according to the given threshold
     if threshold:
         heads = p.get_heads(fac, dem, threshold, units)
     else:
         heads = np.array([], dtype="float32").reshape((0, 6))
+
+    # Obtenemos todas las cabeceras de la capa de puntos, y combinamos con cabeceras anteriores
+    if head_shp:
+        main_heads = p.heads_from_points(dem, head_shp, id_field=id_field)
+        heads = np.append(main_heads, heads, axis=0)
 
     if len(heads) == 0:
         return
@@ -74,16 +66,15 @@ def main(dem, fac, threshold, units, basin_shp, thetaref, reg_points, smooth, di
             heads_inside = p.heads_inside_basin(heads, basin_geom)
             if len(heads_inside) > 0:
                 out_profiles.extend(p.get_profiles(fac, dem, heads_inside, basin=basin_geom, tributaries=True,
-                                                 thetaref=thetaref, reg_points=reg_points, smooth=smooth))
+                                                   thetaref=thetaref, reg_points=reg_points, smooth=smooth))
     else:
         out_profiles.extend(p.get_profiles(fac, dem, heads, tributaries=True, thetaref=thetaref, reg_points=reg_points,
-                                         smooth=smooth))
+                                           smooth=smooth))
 
     # Save output profiles
-    np.save(out_file, np.array(out_profiles))
+    if out_file:
+        out_file = os.path.splitext(out_chi)[0] + ".npy"
+        np.save(out_file, np.array(out_profiles))
 
     # Save output profiles in a shapefile
     p.profiles_to_shp(out_chi, out_profiles, distance)
-
-
-main(dem, fac, threshold, units, basin_shp, thetaref, reg_points, smooth, distance, out_chi, out_file)

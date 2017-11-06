@@ -28,7 +28,7 @@
 #  Version: 3.0
 #  March 02, 2017
 
-#  Last modified 08 October, 2017
+#  Last modified November, 6th 2017
 
 import numpy as np
 import math
@@ -52,6 +52,10 @@ def get_heads(fac, dem, umbral, units="CELL"):
     :param units: *str -- Units of threshold ("MAP" / "CELL" ) (Default="MAP")
     :return: *numpy.array* -- Numpy.array with 6 columns [row, col, X, Y, Z, hid]
     """
+
+    # Si el umbral es cero, devolvemos lista vacia
+    if umbral == 0:
+        return np.array([], dtype="float32").reshape((0, 6))
 
     # Open fac and dem rasters
     facraster = p.open_raster(fac)
@@ -122,7 +126,7 @@ def heads_from_points(dem, point_shp, id_field=""):
         if field_defn.GetType() in [0, 12]:
             take_field = True
 
-    n = 0
+    n = 0.
     for feat in layer:
         geom = feat.GetGeometryRef()
         punto = (geom.GetX(), geom.GetY())
@@ -229,9 +233,9 @@ def get_profiles(fac, dem, heads, basin=None, tributaries=False, **kwargs):
         # Calculate data for the first point
         pos = (int(head[0]), int(head[1]))
         point = demraster.cell_2_xy(pos)
-        area = facraster.get_cell_value(pos)
+        area = facraster.get_cell_value(pos) * demraster.cellsize ** 2  # Area in m^2
         if area == 0:
-            area = 1
+            area = demraster.cellsize ** 2
         z = demraster.get_cell_value(pos)
         distance = 0
 
@@ -254,7 +258,7 @@ def get_profiles(fac, dem, heads, basin=None, tributaries=False, **kwargs):
             # Data of the new point
             next_point = demraster.cell_2_xy(next_pos)
             z = demraster.get_cell_value(next_pos)
-            area = facraster.get_cell_value(next_pos)
+            area = facraster.get_cell_value(next_pos) * demraster.cellsize ** 2  # Area in m^2
             distance += math.sqrt((next_point[0] - point[0]) ** 2 + (next_point[1] - point[1]) ** 2)
 
             # Check if point is still inside basin (if specified and it is not the first head)
@@ -331,11 +335,9 @@ def profiles_from_rivers(fac, dem, river_shapefile, id_field="", name_field="", 
     opt.update(kwargs)
     opt['srs'] = srs
 
-    # Auxiliar PRaster object to record values of Chi
-    chi_raster = p.create_from_template(dem, p.gdal.GDT_Float32, nodata=0.0)
-
-    # Auxiliar PRaster object to record values of distance
+    # Auxiliar PRaster objects to record values of Chi and distance
     if tributaries:
+        chi_raster = p.create_from_template(dem, p.gdal.GDT_Float32, nodata=0.0)
         dist_raster = p.create_from_template(dem, p.gdal.GDT_Float32, nodata=0.0)
 
     # Empty list to record output TProfile objects
@@ -345,31 +347,27 @@ def profiles_from_rivers(fac, dem, river_shapefile, id_field="", name_field="", 
     dataset = ogr.Open(river_shapefile)
     layer = dataset.GetLayer(0)
 
-    # Get features and order them
+    # Get features and order them in case a id_field is given
     layerdef = layer.GetLayerDefn()
     fields = [layerdef.GetFieldDefn(idx).GetName() for idx in range(layerdef.GetFieldCount())]
-    n = 0
-    feat_list = []
-    idx_list = []
 
-    for feat in layer:
-        if id_field in fields:
-            hid = int(feat[id_field])
+    if id_field in fields:
+        field_type = layerdef.GetFieldDefn(layerdef.GetFieldIndex(id_field)).GetType()
+        if field_type == 0 or field_type == 12:
+            feat_ids = []
+            for feat in layer:
+                feat_ids.append(feat.GetField(id_field))
+
+            layer.ResetReading()
+            ids = np.array(feat_ids).argsort().tolist()
         else:
-            hid = n
-        feat_list.append(feat)
-        idx_list.append(hid)
-        n += 1
-
-    feat_array = np.array(feat_list)
-    idx_array = np.array(idx_list, dtype="int32")
-    ind = np.argsort(idx_array)
-    feat_array = feat_array[ind]
-
-    id_profile = 0
+            ids = range(layer.GetFeatureCount())
+    else:
+        ids = range(layer.GetFeatureCount())
 
     # Process all the lines in river shapefile
-    for feat in feat_array:
+    for feat_id in ids:
+        feat = layer.GetFeature(feat_id)
 
         # Get geometry and points
         geom = feat.GetGeometryRef()
@@ -379,73 +377,72 @@ def profiles_from_rivers(fac, dem, river_shapefile, id_field="", name_field="", 
         profile_data = []
 
         # Second list to store processed positions (to record Chi values later on)
-        positions = []
+        if tributaries:
+            positions = []
 
         # Calculate data for the first point
         point = puntos[0]
         pos = demraster.xy_2_cell(point)
-        area = facraster.get_cell_value(pos)
+        area = facraster.get_cell_value(pos) * demraster.cellsize ** 2
         if area == 0:
-            area = 1
+            area = demraster.cellsize ** 2  # Area minima de 1 pixel
         z = demraster.get_cell_value(pos)
         distance = 0
 
         # Add first point to profile data
         profile_data.append((point[0], point[1], z, distance, area))
 
-        # Add position to position list
-        positions.append(pos)
+        # Add position to position list (in case tributaries have to be processed)
+        if tributaries:
+            positions.append(pos)
 
         # Start bucle to obtain next vertexes
         for next_point in puntos[1:]:
             next_pos = demraster.xy_2_cell(next_point)
             z = demraster.get_cell_value(next_pos)
-            area = facraster.get_cell_value(next_pos)
+            area = facraster.get_cell_value(next_pos) * demraster.cellsize ** 2
             distance += math.sqrt((next_point[0] - point[0]) ** 2 + (next_point[1] - point[1]) ** 2)
 
             # Se anaden a las listas
             profile_data.append((next_point[0], next_point[1], z, distance, area))
-            positions.append(next_pos)
+            if tributaries:
+                positions.append(next_pos)
 
             # Guardamos el punto para siguiente ejecucion del bucle
             point = tuple(next_point)
 
         next_pos = demraster.xy_2_cell(next_point)
-        # Get Chi value for the last point (and distances if tributaries == True)
-        chi0 = chi_raster.get_cell_value(next_pos)
+
+        # Get Chi value and distances for the last point if tributaries == True
         if tributaries:
+            chi0 = chi_raster.get_cell_value(next_pos)
             dist0 = dist_raster.get_xy_value(next_point)
         else:
+            chi0 = 0
             dist0 = 0
 
-        if id_field in fields:
-            rid = feat[id_field]
-        else:
-            rid = id_profile
-
+        rid = int(feat_id)
         if name_field in fields:
             name = feat[name_field]
         else:
-            name = str(id_profile)
+            name = str(rid)
 
         # Creamos el perfil
         perfil = TProfile(np.array(profile_data), facraster.cellsize, rid=rid, name=name, thetaref=opt['thetaref'],
                           chi0=chi0, reg_points=opt['reg_points'], srs=srs, mouthdist=dist0, smooth=opt['smooth'])
         out_profiles.append(perfil)
 
-        # Rellenamos las posiciones procesadas con los valores de chi
-        # Y si hemos seleccionado tributaries, tambien se marcan las distancias
-        n = 0
-        distances = perfil.get_l(False)
-        distances = distances[::-1]
-        chi = perfil.get_chi(True)
+        # Si estamos procesando tributarios, llenamos chi_raster y dis_raster con posiciones guardadas
+        if tributaries:
+            n = 0
+            distances = perfil.get_l(False)
+            distances = distances[::-1]
+            chi = perfil.get_chi(True)
 
-        for position in positions:
-            chi_raster.set_cell_value(position, float(chi[n]))
-            dist_raster.set_cell_value(position, float(distances[n]))
-            n += 1
-
-        id_profile += 1
+            for position in positions:
+                chi_raster.set_cell_value(position, float(chi[n]))
+                dist_raster.set_cell_value(position, float(distances[n]))
+                n += 1
 
     return out_profiles
 
@@ -1218,4 +1215,4 @@ class TProfile:
 
 
 def version():
-    return "Version: 4.2 - 19 June 2017"
+    return "Version: 26 October 2017"

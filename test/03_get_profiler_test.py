@@ -2,9 +2,9 @@
 """
 José Vicente Pérez
 Granada University (Spain)
-March, 2017
+October, 2017
 Testing suite for profiler.py
-Last modified: 13 March 2017
+Last modified: 27 October 2017
 """
 
 import time
@@ -18,6 +18,9 @@ print("Tests for profiler.get_profiles()")
 def test01():
     """
     Test for get_profiles() function
+    Obtiene todos los perfiles en un DEM
+        - No cuencas
+        - No cabeceras
     """
     inicio = time.time()
     print("=" * 40)
@@ -39,6 +42,7 @@ def test01():
     
     fin = time.time()
     print("Test finalizado en " + str(fin - inicio) + " segundos")
+    print("Result in " + out_txt)
     print("=" * 40)
 
 
@@ -57,15 +61,16 @@ def test02():
     # Test parameters
     fac = "data/in/darro25fac.tif"
     dem = "data/in/darro25.tif"
-    input_basin_shp = "data/in/cuenca_darro.shp"
-    darro_main_ch = "data/in/darro_head.shp"
+    basin_shp = "data/in/cuenca_darro.shp"
+    main_heads = "data/in/main_heads.shp"
     id_field = "id"
     umbral = 1000
     units = "CELL"
     out_txt = "data/out/03_get_profiles_test02.txt"
 
     # Get input basin geometry
-    dataset = ogr.Open(input_basin_shp)
+    driver = ogr.GetDriverByName("ESRI Shapefile")
+    dataset = driver.Open(basin_shp)
     layer = dataset.GetLayer(0)
     feat = layer.GetFeature(0)
     basin = feat.GetGeometryRef()
@@ -74,7 +79,7 @@ def test02():
     heads = p.get_heads(fac, dem, umbral, units)
 
     # Obtenemos todas las cabeceras de la capa de puntos
-    main_heads = p.heads_from_points(dem, darro_main_ch, id_field=id_field)
+    main_heads = p.heads_from_points(dem, main_heads, id_field=id_field)
 
     # Combinamos las cabeceras de la capa de puntos con las cabeceras del DEM
     heads = np.append(main_heads, heads, axis=0)
@@ -100,43 +105,46 @@ def test03():
     inicio = time.time()
     print("=" * 40)
     print("Test 03 para get_profiles() function")
-    print("Testing Sierra Nevada basin")
+    print("Testing all the basins")
     print("Test in progress...")
 
-    # Test parameters (Sierra Nevada test)
-    fac = "data/in/sn_test_fac.tif"
-    dem = "data/in/sn_test.tif"
-    basin = "data/in/sn_basin.shp"
-    main_ch = "data/in/sn_heads.shp"
+    # Test parameters
+    fac = "data/in/darro25fac.tif"
+    dem = "data/in/darro25.tif"
+    basin_shp = "data/in/cuencas.shp"
+    main_heads = "data/in/main_heads.shp"
+    id_field = "id"
     umbral = 1000
     units = "CELL"
-    out_txt = "data/out/03_get_profiles_testSN" + ".txt"
+    out_txt = "data/out/03_get_profiles_test03.txt"
+
+    # Obtenemos layer con cuencas
+    driver = ogr.GetDriverByName("ESRI Shapefile")
+    dataset = driver.Open(basin_shp)
+    layer = dataset.GetLayer(0)
 
     # Obtenemos todas las cabeceras del DEM
     heads = p.get_heads(fac, dem, umbral, units)
 
-    # Obtenemos los canales principales
-    main_heads = p.heads_from_points(dem, main_ch)
+    # Obtenemos todas las cabeceras de la capa de puntos
+    main_heads = p.heads_from_points(dem, main_heads, id_field=id_field)
 
     # Combinamos las cabeceras de la capa de puntos con las cabeceras del DEM
     heads = np.append(main_heads, heads, axis=0)
 
-    # Abrimos shapefile de poligonos con las cuencas
-    dataset = ogr.Open(basin)
-    layer = dataset.GetLayer(0)
-
+    # Creamos lista vacia de perfiles y la vamos llenado con los perfiles de cada cuenca
     perfiles = []
-    n_perfiles = 0
     for feat in layer:
-        # Obtenemos poligono de la cuenca
+        # Obtenemos geometria
         basin = feat.GetGeometryRef()
-        # Obtenemos las cabeceras de dentro de la cuenca
-        basin_heads = p.heads_inside_basin(heads, basin)
-        n_perfiles += basin_heads.shape[0]
-        # Creamos los perfiles
-        basin_profiles = p.get_profiles(fac, dem, basin_heads, basin, tributaries=True)
-        perfiles.extend(basin_profiles)
 
+        # Obtenemos cabeceras dentro de cuenca
+        cabeceras = p.heads_inside_basin(heads, basin)
+
+        # Extraemos los perfiles para esas cabeceras
+        perfiles.extend(p.get_profiles(fac, dem, cabeceras, basin, tributaries=True, thetaref=0.5, reg_points=10))
+
+    # Salvamos perfiles
     save_profiles(perfiles, out_txt)
     # draw_profiles(perfiles)  # Desmarcar para pintar los perfiles
     fin = time.time()

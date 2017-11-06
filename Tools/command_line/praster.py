@@ -28,7 +28,7 @@
 #  Version: 3.0
 #  November 23, 2016
 
-#  Last modified 02 March, 2017
+#  Last modified November,6th 2017
 
 import gdal
 import numpy as np
@@ -272,7 +272,7 @@ class PRaster:
         :param path: *str* -- Path where new raster will be saved
         """
 
-        if self.array.dtype not in NTYPES.keys():
+        if str(self.array.dtype) not in NTYPES.keys():
             return
         else:
             tipo = NTYPES[str(self.array.dtype)]
