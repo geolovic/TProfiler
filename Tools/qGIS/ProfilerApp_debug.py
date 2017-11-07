@@ -146,7 +146,7 @@ class ProfilerApp:
         self.ax.clear()
         perfil = self.profiles[self.active]
         slopes = perfil.get_slope()
-        areas = perfil.get_area(cells=False)
+        areas = perfil.get_area()
         self.ax.set_xlabel("Area $m^2$")
         self.ax.set_ylabel("Slope (reg. points: {0})".format(perfil.slope_reg_points))
         self.ax.set_xscale("log")
@@ -785,17 +785,14 @@ class TProfile:
 
         return li
 
-    def get_area(self, head=True, cells=True):
+    def get_area(self, head=True):
         """
         Returns a numpy.array with drainage area values for all vertices
 
         :param head: boolean - Specifies if areas are returned from head (True) or mouth (False)
-        :param cells: boolean - Specifies if areas are measured in cells (True) or in profile units (False)
         :return: numpy.array wiht area values for all vertices
         """
         areas = np.copy(self._data[:, 4])
-        if not cells:
-            areas *= self.dem_res ** 2
 
         if head:
             return areas

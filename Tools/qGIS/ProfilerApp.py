@@ -80,6 +80,9 @@ class ProfilerApp:
         if not os.path.exists(self.basedir):
             os.mkdir(self.basedir)
 
+        # Variable to avoid double click issue in QGIS for Mac
+        self.last_clicked = -1
+        
         self.figure = figure
         self.ax = figure.add_subplot(111)
         self.g_type = 1
@@ -127,11 +130,17 @@ class ProfilerApp:
         self.ax.set_xlabel("Distance [km]")
         self.ax.set_ylabel("Elevation [m]")
         self.ax.set_title(perfil.name)
-        self.ax.plot(li, zi, c="b", lw=0.7, picker=4)
+        self.ax.plot(li, zi, c="#1f66b4", lw=1., picker=4)
+        
+        # Some parameters to make graphic nicer
+        dl = (li.max() - li.min()) * 0.05
+        dz = (zi.max() - zi.min()) * 0.05
+        self.ax.set_xlim(li.min() - dl, li.max() + dl)
+        self.ax.set_ylim(zi.min() - dz, zi.max() + dz)
 
         # Draw knickpoints
         for k in self.knick_points[self.active]:
-            self.ax.plot(li[k[0]], zi[k[0]], k_type[k[1]], mew=0.5, mec="k", ms=10)
+            self.ax.plot(li[k[0]], zi[k[0]], k_type[k[1]], mew=0.7, mec="k", ms=12)
 
     def _draw_area_slope(self):
         """
@@ -140,17 +149,23 @@ class ProfilerApp:
         self.ax.clear()
         perfil = self.profiles[self.active]
         slopes = perfil.get_slope()
-        areas = perfil.get_area(cells=False)
+        areas = perfil.get_area()
         self.ax.set_xlabel("Area $m^2$")
         self.ax.set_ylabel("Slope (reg. points: {0})".format(perfil.slope_reg_points))
         self.ax.set_xscale("log")
         self.ax.set_yscale("log")
         self.ax.set_title(perfil.name)
         self.ax.plot(areas, slopes, "b+", mew=0.5, picker=4)
-
+        
+        # Some parameters to make graphic nicer
+        da = (np.log(areas.max()) - np.log(areas.min())) * 0.05
+        ds = (np.log(slopes.max()) - np.log(slopes.min())) * 0.05
+        self.ax.set_xlim(np.exp(np.log(areas.min()) - da), np.exp(np.log(areas.max()) + da))
+        self.ax.set_ylim(np.exp(np.log(slopes.min()) - ds), np.exp(np.log(slopes.max()) + ds))
+        
         # Draw knickpoints
         for k in self.knick_points[self.active]:
-            self.ax.plot(areas[k[0]], slopes[k[0]], k_type[k[1]], mew=0.5, mec="k", ms=10)
+            self.ax.plot(areas[k[0]], slopes[k[0]], k_type[k[1]], mew=0.5, mec="k", ms=12)
 
     def _draw_chi_profile(self):
         """
@@ -163,20 +178,26 @@ class ProfilerApp:
         self.ax.set_xlabel("Chi [m]")
         self.ax.set_ylabel("Elevation [m]")
         self.ax.set_title(perfil.name)
-        self.ax.plot(chi, zi, c="b", lw=0.7, picker=4)
+        self.ax.plot(chi, zi, c="#1f77b4", lw=1., picker=4)
+        
+        # Some parameters to make graphic nicer
+        dchi = (chi.max() - chi.min()) * 0.05
+        dz = (zi.max() - zi.min()) * 0.05
+        self.ax.set_xlim(chi.min() - dchi, chi.max() + dchi)
+        self.ax.set_ylim(zi.min() - dz, zi.max() + dz)
 
         # Draw regressions
         for r in self.regressions[self.active]:
-            self.ax.plot(r[4][:, 0], r[4][:, 1], c="r", ls="--", lw=1)
+            self.ax.plot(r[4][:, 0], r[4][:, 1], c="r", ls="--", lw=1.)
             p1x = self.profiles[self.active].get_chi()[r[0]]
             p1y = self.profiles[self.active].get_z()[r[0]]
             p2x = self.profiles[self.active].get_chi()[r[1]]
             p2y = self.profiles[self.active].get_z()[r[1]]
-            self.ax.plot([p1x, p2x], [p1y, p2y], "k+")
+            self.ax.plot([p1x, p2x], [p1y, p2y], "k+",  mew = 1., markersize=8)
 
         # Draw knickpoints
         for k in self.knick_points[self.active]:
-            self.ax.plot(chi[k[0]], zi[k[0]], k_type[k[1]], mew=0.5, mec="k", ms=10)
+            self.ax.plot(chi[k[0]], zi[k[0]], k_type[k[1]], mew=0.5, mec="k", ms=12)
 
     def _draw_ksn_profile(self):
         """
@@ -189,11 +210,17 @@ class ProfilerApp:
         self.ax.set_xlabel("Distance [km]")
         self.ax.set_ylabel("Ksn (reg. points: {0})".format(perfil.ksn_reg_points))
         self.ax.set_title(perfil.name)
-        self.ax.plot(li, ksn, c="b", lw=0.7, picker=4)
+        self.ax.plot(li, ksn, c="#1f77b4", lw=1., picker=4)
 
+        # Some parameters to make graphic nicer
+        dl = (li.max() - li.min()) * 0.05
+        dk = (ksn.max() - ksn.min()) * 0.05
+        self.ax.set_xlim(li.min() - dl, li.max() + dl)
+        self.ax.set_ylim(ksn.min() - dk, ksn.max() + dk)
+        
         # Draw knickpoints
         for k in self.knick_points[self.active]:
-            self.ax.plot(li[k[0]], ksn[k[0]], k_type[k[1]], mew=0.5, mec="k", ms=10)
+            self.ax.plot(li[k[0]], ksn[k[0]], k_type[k[1]], mew=0.5, mec="k", ms=12)
 
     def _mode_inf(self):
         """
@@ -267,7 +294,13 @@ class ProfilerApp:
             ind = (event.ind[-1] + event.ind[0]) // 2
         else:
             ind = event.ind[0]
-
+        
+        # Code to avoid multiple points clicked at the same position in QGIS for Mac (magic mouse issue??)
+        if ind == self.last_clicked:
+            return
+        else:
+            self.last_clicked = ind
+        
         # Select the proper option according with the drawing mode
         if self.mode == "K":
             self.knick_points[self.active].append([ind, 0])
@@ -277,7 +310,7 @@ class ProfilerApp:
             self.reg_points.append(ind)
             chi = self.profiles[self.active].get_chi()[ind]
             zi = self.profiles[self.active].get_z()[ind]
-            self.ax.plot(chi, zi, "k+")
+            self.ax.plot(chi,  zi,  "k+",  mew = 1., markersize=8)
             self.figure.canvas.draw()
             self.create_regression()
 
@@ -287,7 +320,7 @@ class ProfilerApp:
             zi = self.profiles[self.active].get_z()
             c_point = chi[ind]
             z_point = zi[ind]
-            self.ax.plot(c_point, z_point, "k+", markersize=7)
+            self.ax.plot(c_point, z_point,  "k+",  mew = 1., markersize=8)
             self.figure.canvas.draw()
             self.remove_dam()
 
@@ -297,7 +330,7 @@ class ProfilerApp:
             zi = self.profiles[self.active].get_z()
             c_point = li[ind]
             z_point = zi[ind]
-            self.ax.plot(c_point, z_point, "k+", markersize=7)
+            self.ax.plot(c_point, z_point, "k+",  mew = 1., markersize=8)
             self.figure.canvas.draw()
             self.remove_dam2()
 
@@ -386,7 +419,7 @@ class ProfilerApp:
         """
         if len(self.reg_points) < 2:
             return
-        if len(self.reg_points) > 2:
+        elif len(self.reg_points) > 2:
             self.reg_points = []
             self.draw()
             return
@@ -482,7 +515,7 @@ class ProfilerApp:
             for k in self.knick_points[idx]:
                 ax.plot(xi[k[0]], yi[k[0]], k_type[k[1]], mew=0.5, mec="k", ms=7)
 
-                # Draw the active profile with different color
+        # Draw the active profile with different color
         perfil = self.profiles[self.active]
         xi = perfil.get_x()
         yi = perfil.get_y()
@@ -779,17 +812,14 @@ class TProfile:
 
         return li
 
-    def get_area(self, head=True, cells=True):
+    def get_area(self, head=True):
         """
         Returns a numpy.array with drainage area values for all vertices
 
         :param head: boolean - Specifies if areas are returned from head (True) or mouth (False)
-        :param cells: boolean - Specifies if areas are measured in cells (True) or in profile units (False)
         :return: numpy.array wiht area values for all vertices
         """
         areas = np.copy(self._data[:, 4])
-        if not cells:
-            areas *= self.dem_res ** 2
 
         if head:
             return areas
@@ -1096,7 +1126,7 @@ class TProfile:
 # PROGRAM CODE
 # ============
 def load_qgis_data(in_file):
-    profile_data = pickle.load(open(in_file, "rb"), encoding="latin1")
+    profile_data = pickle.load(open(in_file, "rb"))
     perfiles = []
     for row in profile_data:
         perfiles.append(TProfile(row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], 0))

@@ -148,7 +148,7 @@ class ProfilerApp:
         self.ax.clear()
         perfil = self.profiles[self.active]
         slopes = perfil.get_slope()
-        areas = perfil.get_area(cells=False)
+        areas = perfil.get_area()
         self.ax.set_xlabel("Area $m^2$")
         self.ax.set_ylabel("Slope (reg. points: {0})".format(perfil.slope_reg_points))
         self.ax.set_xscale("log")

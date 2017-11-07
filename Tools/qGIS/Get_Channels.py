@@ -43,10 +43,10 @@ import os
 ##Output_channel_shapefile=output vector
 ##Threshold=number 0
 ##Units=selection CELLS;MAP
-##Use_heads=boolean True
+##Use_heads=boolean False
 ##Heads_shapefile=vector
 ##Id_field=field Heads_shapefile
-##Use_basins=boolean True
+##Use_basins=boolean False
 ##Basin_shapefile=vector
 
 dem = str(DEM)
@@ -533,17 +533,14 @@ class TProfile:
 
         return li
 
-    def get_area(self, head=True, cells=True):
+    def get_area(self, head=True):
         """
         Returns a numpy.array with drainage area values for all vertices
 
         :param head: boolean - Specifies if areas are returned from head (True) or mouth (False)
-        :param cells: boolean - Specifies if areas are measured in cells (True) or in profile units (False)
         :return: numpy.array wiht area values for all vertices
         """
         areas = np.copy(self._data[:, 4])
-        if not cells:
-            areas *= self.dem_res ** 2
 
         if head:
             return areas
@@ -970,14 +967,14 @@ class PRaster:
         vec_adyacentes = [(-1, 0), (0, -1), (0, 1), (1, 0)]
         vec_diagonales = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
 
-        # Suponemos que el valor m�ximo es el mismo
+        # Suponemos que el valor mÃ¡ximo es el mismo
         cell_value = self.get_cell_value(cell)
 
         max_value = cell_value
         max_pos = cell
 
         # La celda a la que va el flujo no tiene porque ser la de mayor valor de flow accumulation
-        # En el caso de que el flujo haga una L la m�xima es la diagonal, pero el flujo va a la adyacente
+        # En el caso de que el flujo haga una L la mÃ¡xima es la diagonal, pero el flujo va a la adyacente
         # Por ello primero se comprueban las celdas adyacentes y luego las diagonales
 
         for n in vec_adyacentes:
