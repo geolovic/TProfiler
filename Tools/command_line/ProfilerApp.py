@@ -25,10 +25,10 @@
 #  18071 Granada, Spain
 #  vperez@ugr.es // geolovic@gmail.com
 
-#  Version: 2
-#  October 08, 2017
+#  Version: 1.2
+#  November, 6th 2017
 
-#  Last modified October 08, 2017
+#  Last modified November, 6th 2017
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -37,15 +37,27 @@ import osr
 import os
 import pickle
 from profiler import TProfile
+import argparse
 
 
-# DEBUG ARGUMENTS
+# ARGUMENT PARSER
 # ===============
-in_file = "data/graph.npy"
-qgis_file = False
-is_graph = True
-slope_reg_points = 0
-ksn_reg_points = 0
+parser = argparse.ArgumentParser()
+parser.add_argument("in_file", help="Input file with profiles [*.npy] or [*.dat] if comes from QGIS")
+parser.add_argument("-q", "--qgis",  help="Input file comes from QGIS ['*.dat' file]", action="store_true")
+parser.add_argument("-g", "--is_graph", help="Input file is an instance of ProfilerApp", action="store_true")
+parser.add_argument("-r", "--reg_points", type=int, help="Number of regression points", default=0)
+args = parser.parse_args()
+
+
+# ARGUMENTS
+# ===============
+in_file = args.in_file
+basedir = os.path.dirname(in_file)
+qgis_file = args.qgis
+is_graph = args.is_graph
+slope_reg_points = args.reg_points
+ksn_reg_points = args.reg_points
 
 
 # Disable some keymap characters that interfere with graph key events
@@ -69,10 +81,13 @@ class ProfilerApp:
         :param profiles: numpy.array with TProfiles objects
         :param basedir: Base directory to save regressions and knickpoints
         """
-        if basedir == "":
-            self.basedir = basedir
-        else:
-            self.basedir = basedir + "/"
+        # Create the output folder (for knickpoints and regressions)
+        if basedir[-1] == "/":
+            basedir = basedir[:-1]
+        self.basedir = basedir + "/out_files"
+        if not os.path.exists(self.basedir):
+            os.mkdir(self.basedir)
+        
         self.figure = figure
         self.ax = figure.add_subplot(111)
         self.g_type = 1
@@ -133,7 +148,7 @@ class ProfilerApp:
         self.ax.clear()
         perfil = self.profiles[self.active]
         slopes = perfil.get_slope()
-        areas = perfil.get_area(cells=False)
+        areas = perfil.get_area()
         self.ax.set_xlabel("Area $m^2$")
         self.ax.set_ylabel("Slope (reg. points: {0})".format(perfil.slope_reg_points))
         self.ax.set_xscale("log")
@@ -250,7 +265,7 @@ class ProfilerApp:
         if self.mode == "K" and len(self.knick_points[self.active]) > 0:
             kp = self.knick_points[self.active][-1]
             kp[1] = (kp[1] + 1) % len(k_type)
-            #self.knick_points[self.active][-1][1] = (self.knick_points[self.active][-1][1] + 1) % 2
+            # self.knick_points[self.active][-1][1] = (self.knick_points[self.active][-1][1] + 1) % 2
             self.draw()    
         
     def pick_point(self, event):
@@ -277,15 +292,25 @@ class ProfilerApp:
             self.figure.canvas.draw()
             self.create_regression()   
             
+        elif self.mode == "D" and self.g_type == 3:
+            self.dam_points.append(ind)
+            chi = self.profiles[self.active].get_chi()
+            zi = self.profiles[self.active].get_z()
+            c_point = chi[ind]
+            z_point = zi[ind]
+            self.ax.plot(c_point, z_point, "k+", markersize=7)
+            self.figure.canvas.draw()
+            self.remove_dam()
+
         elif self.mode == "D" and self.g_type == 1:
             self.dam_points.append(ind)
             li = self.profiles[self.active].get_l() / 1000.
             zi = self.profiles[self.active].get_z()
-            l_point = li[ind]
+            c_point = li[ind]
             z_point = zi[ind]
-            self.ax.plot(l_point, z_point, "k+", markersize=7)
+            self.ax.plot(c_point, z_point, "k+", markersize=7)
             self.figure.canvas.draw()
-            self.remove_dam()
+            self.remove_dam2()
 
     def remove_dam(self):
         """
@@ -294,6 +319,9 @@ class ProfilerApp:
         """
         if len(self.dam_points) < 2:
             return
+        elif len(self.dam_points) > 2:
+            self.dam_points = []
+            self.draw()
 
         p1 = self.dam_points[0]
         p2 = self.dam_points[1]
@@ -305,18 +333,57 @@ class ProfilerApp:
         perfil = self.profiles[self.active]
         
         # Create a straigt-line between both points
+        chi = perfil.get_chi()
+        zi = perfil.get_z()
+        arr_inds = list(range(p1, p2))
+        
+        pto1 = (chi[p1], zi[p1])
+        pto2 = (chi[p2], zi[p2])        
+
+        m = (pto2[1] - pto1[1]) / float(pto2[0] - pto1[0])
+        b = pto1[1] - (m * pto1[0])
+        
+        xi = chi[arr_inds]
+        yi = xi * m + b      
+
+        perfil._data[p1:p2, 2] = yi
+        perfil.calculate_slope(perfil.slope_reg_points)
+        perfil.calculate_ksn(perfil.ksn_reg_points)
+        self.dam_points = []
+        self.draw()
+
+    def remove_dam2(self):
+        """
+        Removes points that correspond with a dam in the longitudinal profile
+        It will take points from self.dam_points[] >> list with two points (positions)
+        """
+        if len(self.dam_points) < 2:
+            return
+        elif len(self.dam_points) > 2:
+            self.dam_points = []
+            self.draw()
+
+        p1 = self.dam_points[0]
+        p2 = self.dam_points[1]
+        if p1 > p2:
+            p1, p2 = p2, p1
+
+        perfil = self.profiles[self.active]
+
+        # Create a straigt-line between both points
         li = perfil.get_l() / 1000.
         zi = perfil.get_z()
         arr_inds = list(range(p1, p2))
 
         pto1 = (li[p1], zi[p1])
         pto2 = (li[p2], zi[p2])
-        
+
         m = (pto2[1] - pto1[1]) / float(pto2[0] - pto1[0])
         b = pto1[1] - (m * pto1[0])
-        
+
         xi = li[arr_inds]
         yi = xi * m + b
+
         perfil._data[p1:p2, 2] = yi
         perfil.calculate_slope(perfil.slope_reg_points)
         perfil.calculate_ksn(perfil.ksn_reg_points)
@@ -329,6 +396,10 @@ class ProfilerApp:
         It will take points from self.reg_points[] >> list with two points (positions)
         """
         if len(self.reg_points) < 2:
+            return
+        if len(self.reg_points) > 2:
+            self.reg_points = []
+            self.draw()
             return
 
         p1 = self.reg_points[0]
@@ -420,13 +491,16 @@ class ProfilerApp:
             ax.plot(xi, yi, c="0.6", lw=0.5)
             # Draw the nickpoints
             for k in self.knick_points[idx]:
-                ax.plot(xi[k], yi[k], "r*", mew=0.5, mec="k", ms=5)    
+                ax.plot(xi[k[0]], yi[k[0]], k_type[k[1]], mew=0.5, mec="k", ms=7)    
         
         # Draw the active profile with different color            
         perfil = self.profiles[self.active]
         xi = perfil.get_x()
         yi = perfil.get_y()
         ax.plot(xi, yi, c="c", lw=1)
+        # Draw knickpoints of the active profile bigger
+        for k in self.knick_points[self.active]:
+            ax.plot(xi[k[0]], yi[k[0]], k_type[k[1]], mew=0.5, mec="k", ms=10) 
         
     # SAVING METHODS
     # =============   
@@ -507,8 +581,8 @@ class ProfilerApp:
         """
         Saves selected knickpoints and regressions into shapefiles
         """
-        out_knicks = self.basedir + "knickpoints.shp"
-        out_regres = self.basedir + "regressions.shp"
+        out_knicks = self.basedir + "/knickpoints.shp"
+        out_regres = self.basedir + "/regressions.shp"
         self._save_regressions(out_regres)    
         self._save_knickpoints(out_knicks)
         
@@ -516,8 +590,8 @@ class ProfilerApp:
             self.mode = None
             self.figure.canvas.mpl_disconnect(self.pcid)
         
-        np.save(self.basedir + "graph.npy", np.array([self]))
-        np.save(self.basedir + "graph_profiles.npy", self.profiles)
+        np.save(self.basedir + "/graph.npy", np.array([self]))
+        np.save(self.basedir + "/graph_profiles.npy", self.profiles)
         self.mode_txt.set_text('Files saved on "{0}"'.format(self.basedir))
         self.ax.figure.canvas.draw()
     
@@ -571,7 +645,6 @@ def load_qgis_data(in_file):
 
 # PROGRAM CODE
 # ============
-base_dir = os.path.dirname(in_file)
 if is_graph:
     pgraph = np.load(in_file)[0]
     pgraph.activate()
@@ -590,6 +663,6 @@ else:
         for perfil in perfiles:
             perfil.calculate_ksn(ksn_reg_points)
     fig = plt.figure()
-    pgraph = ProfilerApp(fig, perfiles, base_dir)
+    pgraph = ProfilerApp(fig, perfiles, basedir)
 
 plt.show()

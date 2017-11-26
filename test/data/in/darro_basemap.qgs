@@ -1,23 +1,23 @@
 <!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>
-<qgis projectname="" version="2.18.9">
+<qgis projectname="" version="2.18.7">
   <title></title>
   <autotransaction active="0"/>
   <evaluateDefaultValues active="0"/>
   <layer-tree-group expanded="1" checked="Qt::PartiallyChecked" name="">
     <customproperties/>
-    <layer-tree-layer expanded="1" providerKey="ogr" checked="Qt::Checked" id="rios20170713213356294" source="C:/Users/Vicente/PycharmProjects/TProfiler/test/data/in/rios.shp" name="rios">
+    <layer-tree-layer expanded="1" providerKey="ogr" checked="Qt::Checked" id="main_heads20171026150502946" source="/Users/vicen/PycharmProjects/TProfiler/test/data/in/main_heads.shp" name="main_heads">
       <customproperties/>
     </layer-tree-layer>
-    <layer-tree-layer expanded="1" providerKey="ogr" checked="Qt::Checked" id="cuencas20170713201102656" source="C:/Users/Vicente/PycharmProjects/TProfiler/test/data/in/cuencas.shp" name="cuencas">
+    <layer-tree-layer expanded="1" providerKey="ogr" checked="Qt::Checked" id="cuencas20170713201102656" source="/Users/vicen/PycharmProjects/TProfiler/test/data/in/cuencas.shp" name="cuencas">
       <customproperties/>
     </layer-tree-layer>
-    <layer-tree-layer expanded="0" providerKey="gdal" checked="Qt::Checked" id="darro2520161113205710495" source="C:/Users/Vicente/PycharmProjects/TProfiler/test/data/in/darro25.tif" name="darro25">
+    <layer-tree-layer expanded="0" providerKey="gdal" checked="Qt::Checked" id="darro2520161113205710495" source="/Users/vicen/PycharmProjects/TProfiler/test/data/in/darro25.tif" name="darro25">
       <customproperties/>
     </layer-tree-layer>
-    <layer-tree-layer expanded="0" providerKey="gdal" checked="Qt::Unchecked" id="darro25hsd20161113205714864" source="C:/Users/Vicente/PycharmProjects/TProfiler/test/data/in/darro25hsd.tif" name="darro25hsd">
+    <layer-tree-layer expanded="0" providerKey="gdal" checked="Qt::Checked" id="darro25hsd20161113205714864" source="/Users/vicen/PycharmProjects/TProfiler/test/data/in/darro25hsd.tif" name="darro25hsd">
       <customproperties/>
     </layer-tree-layer>
-    <layer-tree-layer expanded="0" providerKey="gdal" checked="Qt::Unchecked" id="darro25fac20161113205705735" source="C:/Users/Vicente/PycharmProjects/TProfiler/test/data/in/darro25fac.tif" name="darro25fac">
+    <layer-tree-layer expanded="1" providerKey="gdal" checked="Qt::Unchecked" id="darro25fac20161113205705735" source="/Users/vicen/PycharmProjects/TProfiler/test/data/in/darro25fac.tif" name="darro25fac">
       <customproperties/>
     </layer-tree-layer>
   </layer-tree-group>
@@ -26,9 +26,9 @@
     <units>meters</units>
     <extent>
       <xmin>445495.625</xmin>
-      <ymin>4111901.875</ymin>
+      <ymin>4110057.22848360659554601</ymin>
       <xmax>476129.375</xmax>
-      <ymax>4128623.125</ymax>
+      <ymax>4130467.77151639340445399</ymax>
     </extent>
     <rotation>0</rotation>
     <projections>1</projections>
@@ -46,23 +46,37 @@
     </destinationsrs>
     <rendermaptile>0</rendermaptile>
     <layer_coordinate_transform_info>
-      <layer_coordinate_transform destAuthId="EPSG:25830" srcAuthId="EPSG:3042" srcDatumTransform="-1" destDatumTransform="-1" layerid="out_main_ch20170713212701248"/>
       <layer_coordinate_transform destAuthId="EPSG:25830" srcAuthId="EPSG:25830" srcDatumTransform="-1" destDatumTransform="-1" layerid="cuencas20170713201102656"/>
-      <layer_coordinate_transform destAuthId="EPSG:25830" srcAuthId="EPSG:25830" srcDatumTransform="-1" destDatumTransform="-1" layerid="darro25hsd20161113205714864"/>
-      <layer_coordinate_transform destAuthId="EPSG:25830" srcAuthId="EPSG:3042" srcDatumTransform="-1" destDatumTransform="-1" layerid="05_profile_lines20170713214118468"/>
-      <layer_coordinate_transform destAuthId="EPSG:25830" srcAuthId="EPSG:3042" srcDatumTransform="-1" destDatumTransform="-1" layerid="sn_test20170713211118814"/>
-      <layer_coordinate_transform destAuthId="EPSG:25830" srcAuthId="EPSG:25830" srcDatumTransform="-1" destDatumTransform="-1" layerid="darro25fac20161113205705735"/>
-      <layer_coordinate_transform destAuthId="EPSG:25830" srcAuthId="EPSG:25830" srcDatumTransform="-1" destDatumTransform="-1" layerid="03_get_profiles_testSN20170713211140722"/>
-      <layer_coordinate_transform destAuthId="EPSG:25830" srcAuthId="EPSG:25830" srcDatumTransform="-1" destDatumTransform="-1" layerid="03_get_profiles_test0220170713210849178"/>
-      <layer_coordinate_transform destAuthId="EPSG:25830" srcAuthId="EPSG:25830" srcDatumTransform="-1" destDatumTransform="-1" layerid="darro2520161113205710495"/>
-      <layer_coordinate_transform destAuthId="EPSG:25830" srcAuthId="EPSG:25830" srcDatumTransform="-1" destDatumTransform="-1" layerid="rios20170713212647530"/>
-      <layer_coordinate_transform destAuthId="EPSG:25830" srcAuthId="EPSG:25830" srcDatumTransform="-1" destDatumTransform="-1" layerid="rios20170713213356294"/>
-      <layer_coordinate_transform destAuthId="EPSG:25830" srcAuthId="EPSG:3042" srcDatumTransform="-1" destDatumTransform="-1" layerid="sn_basin20170713211109653"/>
+      <layer_coordinate_transform destAuthId="EPSG:25830" srcAuthId="EPSG:25830" srcDatumTransform="-1" destDatumTransform="-1" layerid="03_get_profiles_test0120171026164102837"/>
+      <layer_coordinate_transform destAuthId="EPSG:25830" srcAuthId="EPSG:25830" srcDatumTransform="-1" destDatumTransform="-1" layerid="01_cabeceras_puntos_0120171026162516403"/>
       <layer_coordinate_transform destAuthId="EPSG:25830" srcAuthId="EPSG:3042" srcDatumTransform="-1" destDatumTransform="-1" layerid="05_profile_points20170713214128248"/>
-      <layer_coordinate_transform destAuthId="EPSG:25830" srcAuthId="EPSG:3042" srcDatumTransform="-1" destDatumTransform="-1" layerid="sn_heads20170713211115827"/>
-      <layer_coordinate_transform destAuthId="EPSG:25830" srcAuthId="EPSG:3042" srcDatumTransform="-1" destDatumTransform="-1" layerid="out_main_ch20170713212731062"/>
-      <layer_coordinate_transform destAuthId="EPSG:25830" srcAuthId="EPSG:25830" srcDatumTransform="-1" destDatumTransform="-1" layerid="rios20170713211420654"/>
+      <layer_coordinate_transform destAuthId="EPSG:25830" srcAuthId="EPSG:25830" srcDatumTransform="-1" destDatumTransform="-1" layerid="main_heads20171026150502946"/>
+      <layer_coordinate_transform destAuthId="EPSG:25830" srcAuthId="EPSG:3042" srcDatumTransform="-1" destDatumTransform="-1" layerid="out_main_ch20170713212701248"/>
+      <layer_coordinate_transform destAuthId="EPSG:25830" srcAuthId="EPSG:25830" srcDatumTransform="-1" destDatumTransform="-1" layerid="rios20170713213356294"/>
       <layer_coordinate_transform destAuthId="EPSG:25830" srcAuthId="EPSG:25830" srcDatumTransform="-1" destDatumTransform="-1" layerid="rios_darro20170713212931591"/>
+      <layer_coordinate_transform destAuthId="EPSG:25830" srcAuthId="EPSG:25830" srcDatumTransform="-1" destDatumTransform="-1" layerid="00_heads_1000CELL20171026152456200"/>
+      <layer_coordinate_transform destAuthId="EPSG:25830" srcAuthId="EPSG:25830" srcDatumTransform="-1" destDatumTransform="-1" layerid="darro25fac20161113205705735"/>
+      <layer_coordinate_transform destAuthId="EPSG:25830" srcAuthId="EPSG:3042" srcDatumTransform="-1" destDatumTransform="-1" layerid="sn_heads20170713211115827"/>
+      <layer_coordinate_transform destAuthId="EPSG:25830" srcAuthId="EPSG:25830" srcDatumTransform="-1" destDatumTransform="-1" layerid="rios20170713212647530"/>
+      <layer_coordinate_transform destAuthId="EPSG:25830" srcAuthId="EPSG:25830" srcDatumTransform="-1" destDatumTransform="-1" layerid="02_cabeceras_darro20171026163157074"/>
+      <layer_coordinate_transform destAuthId="EPSG:25830" srcAuthId="EPSG:4326" srcDatumTransform="-1" destDatumTransform="-1" layerid="00_heads_100020171026152354756"/>
+      <layer_coordinate_transform destAuthId="EPSG:25830" srcAuthId="EPSG:25830" srcDatumTransform="-1" destDatumTransform="-1" layerid="01_cabeceras_puntos_0320171026154942437"/>
+      <layer_coordinate_transform destAuthId="EPSG:25830" srcAuthId="EPSG:3042" srcDatumTransform="-1" destDatumTransform="-1" layerid="sn_basin20170713211109653"/>
+      <layer_coordinate_transform destAuthId="EPSG:25830" srcAuthId="EPSG:25830" srcDatumTransform="-1" destDatumTransform="-1" layerid="01_cabeceras_puntos_0120171026154515474"/>
+      <layer_coordinate_transform destAuthId="EPSG:25830" srcAuthId="EPSG:3042" srcDatumTransform="-1" destDatumTransform="-1" layerid="out_main_ch20170713212731062"/>
+      <layer_coordinate_transform destAuthId="EPSG:25830" srcAuthId="EPSG:25830" srcDatumTransform="-1" destDatumTransform="-1" layerid="00_heads_625000MAP20171026152516360"/>
+      <layer_coordinate_transform destAuthId="EPSG:25830" srcAuthId="EPSG:25830" srcDatumTransform="-1" destDatumTransform="-1" layerid="rios20170713211420654"/>
+      <layer_coordinate_transform destAuthId="EPSG:25830" srcAuthId="EPSG:25830" srcDatumTransform="-1" destDatumTransform="-1" layerid="03_get_profiles_testSN20170713211140722"/>
+      <layer_coordinate_transform destAuthId="EPSG:25830" srcAuthId="EPSG:25830" srcDatumTransform="-1" destDatumTransform="-1" layerid="darro25hsd20161113205714864"/>
+      <layer_coordinate_transform destAuthId="EPSG:25830" srcAuthId="EPSG:25830" srcDatumTransform="-1" destDatumTransform="-1" layerid="00_heads_100020171026152441665"/>
+      <layer_coordinate_transform destAuthId="EPSG:25830" srcAuthId="EPSG:25830" srcDatumTransform="-1" destDatumTransform="-1" layerid="03_get_profiles_test0220170713210849178"/>
+      <layer_coordinate_transform destAuthId="EPSG:25830" srcAuthId="EPSG:25830" srcDatumTransform="-1" destDatumTransform="-1" layerid="01_cabeceras_puntos_0220171026154731723"/>
+      <layer_coordinate_transform destAuthId="EPSG:25830" srcAuthId="EPSG:3042" srcDatumTransform="-1" destDatumTransform="-1" layerid="sn_test20170713211118814"/>
+      <layer_coordinate_transform destAuthId="EPSG:25830" srcAuthId="EPSG:25830" srcDatumTransform="-1" destDatumTransform="-1" layerid="darro2520161113205710495"/>
+      <layer_coordinate_transform destAuthId="EPSG:25830" srcAuthId="EPSG:3042" srcDatumTransform="-1" destDatumTransform="-1" layerid="05_profile_lines20170713214118468"/>
+      <layer_coordinate_transform destAuthId="EPSG:25830" srcAuthId="EPSG:25830" srcDatumTransform="-1" destDatumTransform="-1" layerid="02_cabeceras_cuencas20171026163047863"/>
+      <layer_coordinate_transform destAuthId="EPSG:25830" srcAuthId="EPSG:25830" srcDatumTransform="-1" destDatumTransform="-1" layerid="01_cabeceras_puntos_0220171026154558247"/>
+      <layer_coordinate_transform destAuthId="EPSG:25830" srcAuthId="EPSG:25830" srcDatumTransform="-1" destDatumTransform="-1" layerid="01_cabeceras_puntos_0220171026162432517"/>
     </layer_coordinate_transform_info>
   </mapcanvas>
   <layer-tree-canvas>
@@ -71,13 +85,13 @@
       <item>darro2520161113205710495</item>
       <item>darro25hsd20161113205714864</item>
       <item>cuencas20170713201102656</item>
-      <item>rios20170713213356294</item>
+      <item>main_heads20171026150502946</item>
     </custom-order>
   </layer-tree-canvas>
   <legend updateDrawingOrder="true">
-    <legendlayer drawingOrder="-1" open="true" checked="Qt::Checked" name="rios" showFeatureCount="0">
+    <legendlayer drawingOrder="-1" open="true" checked="Qt::Checked" name="main_heads" showFeatureCount="0">
       <filegroup open="true" hidden="false">
-        <legendlayerfile isInOverview="0" layerid="rios20170713213356294" visible="1"/>
+        <legendlayerfile isInOverview="0" layerid="main_heads20171026150502946" visible="1"/>
       </filegroup>
     </legendlayer>
     <legendlayer drawingOrder="-1" open="true" checked="Qt::Checked" name="cuencas" showFeatureCount="0">
@@ -90,13 +104,13 @@
         <legendlayerfile isInOverview="0" layerid="darro2520161113205710495" visible="1"/>
       </filegroup>
     </legendlayer>
-    <legendlayer drawingOrder="-1" open="false" checked="Qt::Unchecked" name="darro25hsd" showFeatureCount="0">
+    <legendlayer drawingOrder="-1" open="false" checked="Qt::Checked" name="darro25hsd" showFeatureCount="0">
       <filegroup open="false" hidden="false">
-        <legendlayerfile isInOverview="0" layerid="darro25hsd20161113205714864" visible="0"/>
+        <legendlayerfile isInOverview="0" layerid="darro25hsd20161113205714864" visible="1"/>
       </filegroup>
     </legendlayer>
-    <legendlayer drawingOrder="-1" open="false" checked="Qt::Unchecked" name="darro25fac" showFeatureCount="0">
-      <filegroup open="false" hidden="false">
+    <legendlayer drawingOrder="-1" open="true" checked="Qt::Unchecked" name="darro25fac" showFeatureCount="0">
+      <filegroup open="true" hidden="false">
         <legendlayerfile isInOverview="0" layerid="darro25fac20161113205705735" visible="0"/>
       </filegroup>
     </legendlayer>
@@ -402,7 +416,7 @@ def my_form_open(dialog, layer, feature):
       <defaults>
         <default field="DN" expression=""/>
       </defaults>
-      <previewExpression></previewExpression>
+      <previewExpression>COALESCE( "DN", '&lt;NULL>' )</previewExpression>
     </maplayer>
     <maplayer minimumScale="inf" maximumScale="1e+08" type="raster" hasScaleBasedVisibilityFlag="0">
       <extent>
@@ -605,7 +619,7 @@ def my_form_open(dialog, layer, feature):
       </pipe>
       <blendMode>0</blendMode>
     </maplayer>
-    <maplayer minimumScale="0" maximumScale="1e+08" type="raster" hasScaleBasedVisibilityFlag="0">
+    <maplayer minimumScale="inf" maximumScale="1e+08" type="raster" hasScaleBasedVisibilityFlag="0">
       <extent>
         <xmin>446225</xmin>
         <ymin>4112300</ymin>
@@ -631,6 +645,7 @@ def my_form_open(dialog, layer, feature):
         </spatialrefsys>
       </srs>
       <customproperties>
+        <property key="embeddedWidgets/count" value="0"/>
         <property key="identify/format" value="Value"/>
       </customproperties>
       <provider>gdal</provider>
@@ -641,13 +656,14 @@ def my_form_open(dialog, layer, feature):
         <map-layer-style name=""/>
       </map-layer-style-manager>
       <pipe>
-        <rasterrenderer gradient="BlackToWhite" opacity="1" alphaBand="-1" type="singlebandgray" grayBand="1">
+        <rasterrenderer opacity="1" alphaBand="0" classificationMax="932" classificationMinMaxOrigin="CumulativeCutFullExtentEstimated" band="1" classificationMin="0" type="singlebandpseudocolor">
           <rasterTransparency/>
-          <contrastEnhancement>
-            <minValue>0</minValue>
-            <maxValue>932</maxValue>
-            <algorithm>StretchToMinimumMaximum</algorithm>
-          </contrastEnhancement>
+          <rastershader>
+            <colorrampshader colorRampType="DISCRETE" clip="0">
+              <item alpha="0" value="1000" label="&lt;= 1000" color="#f7fbff"/>
+              <item alpha="255" value="inf" label="> 1000" color="#08306b"/>
+            </colorrampshader>
+          </rastershader>
         </rasterrenderer>
         <brightnesscontrast brightness="0" contrast="0"/>
         <huesaturation colorizeGreen="128" colorizeOn="0" colorizeRed="255" colorizeBlue="128" grayscaleMode="0" saturation="0" colorizeStrength="100"/>
@@ -706,13 +722,13 @@ def my_form_open(dialog, layer, feature):
       </pipe>
       <blendMode>0</blendMode>
     </maplayer>
-    <maplayer simplifyAlgorithm="0" minimumScale="0" maximumScale="1e+08" simplifyDrawingHints="1" minLabelScale="0" maxLabelScale="1e+08" simplifyDrawingTol="1" readOnly="0" geometry="Line" simplifyMaxScale="1" type="vector" hasScaleBasedVisibilityFlag="0" simplifyLocal="1" scaleBasedLabelVisibilityFlag="0">
-      <id>rios20170713213356294</id>
-      <datasource>./rios.shp</datasource>
+    <maplayer simplifyAlgorithm="0" minimumScale="0" maximumScale="1e+08" simplifyDrawingHints="0" minLabelScale="0" maxLabelScale="1e+08" simplifyDrawingTol="1" readOnly="0" geometry="Point" simplifyMaxScale="1" type="vector" hasScaleBasedVisibilityFlag="0" simplifyLocal="1" scaleBasedLabelVisibilityFlag="0">
+      <id>main_heads20171026150502946</id>
+      <datasource>./main_heads.shp</datasource>
       <keywordList>
         <value></value>
       </keywordList>
-      <layername>rios</layername>
+      <layername>main_heads</layername>
       <srs>
         <spatialrefsys>
           <proj4>+proj=utm +zone=30 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs</proj4>
@@ -742,23 +758,26 @@ def my_form_open(dialog, layer, feature):
       </edittypes>
       <renderer-v2 forceraster="0" symbollevels="0" type="singleSymbol" enableorderby="0">
         <symbols>
-          <symbol alpha="1" clip_to_extent="1" type="line" name="0">
-            <layer pass="0" class="SimpleLine" locked="0">
-              <prop k="capstyle" v="square"/>
-              <prop k="customdash" v="5;2"/>
-              <prop k="customdash_map_unit_scale" v="0,0,0,0,0,0"/>
-              <prop k="customdash_unit" v="MM"/>
-              <prop k="draw_inside_polygon" v="0"/>
+          <symbol alpha="1" clip_to_extent="1" type="marker" name="0">
+            <layer pass="0" class="SimpleMarker" locked="0">
+              <prop k="angle" v="0"/>
+              <prop k="color" v="178,223,138,255"/>
+              <prop k="horizontal_anchor_point" v="1"/>
               <prop k="joinstyle" v="bevel"/>
-              <prop k="line_color" v="83,126,255,255"/>
-              <prop k="line_style" v="solid"/>
-              <prop k="line_width" v="0.5"/>
-              <prop k="line_width_unit" v="MM"/>
-              <prop k="offset" v="0"/>
+              <prop k="name" v="circle"/>
+              <prop k="offset" v="0,0"/>
               <prop k="offset_map_unit_scale" v="0,0,0,0,0,0"/>
               <prop k="offset_unit" v="MM"/>
-              <prop k="use_custom_dash" v="0"/>
-              <prop k="width_map_unit_scale" v="0,0,0,0,0,0"/>
+              <prop k="outline_color" v="0,0,0,255"/>
+              <prop k="outline_style" v="solid"/>
+              <prop k="outline_width" v="0"/>
+              <prop k="outline_width_map_unit_scale" v="0,0,0,0,0,0"/>
+              <prop k="outline_width_unit" v="MM"/>
+              <prop k="scale_method" v="diameter"/>
+              <prop k="size" v="2.4"/>
+              <prop k="size_map_unit_scale" v="0,0,0,0,0,0"/>
+              <prop k="size_unit" v="MM"/>
+              <prop k="vertical_anchor_point" v="1"/>
             </layer>
           </symbol>
         </symbols>
@@ -796,13 +815,13 @@ def my_form_open(dialog, layer, feature):
         <property key="labeling/fieldName" value=""/>
         <property key="labeling/fitInPolygonOnly" value="false"/>
         <property key="labeling/fontCapitals" value="0"/>
-        <property key="labeling/fontFamily" value="MS Shell Dlg 2"/>
+        <property key="labeling/fontFamily" value=".SF NS Text"/>
         <property key="labeling/fontItalic" value="false"/>
         <property key="labeling/fontLetterSpacing" value="0"/>
         <property key="labeling/fontLimitPixelSize" value="false"/>
         <property key="labeling/fontMaxPixelSize" value="10000"/>
         <property key="labeling/fontMinPixelSize" value="3"/>
-        <property key="labeling/fontSize" value="8.25"/>
+        <property key="labeling/fontSize" value="13"/>
         <property key="labeling/fontSizeInMapUnits" value="false"/>
         <property key="labeling/fontSizeMapUnitScale" value="0,0,0,0,0,0"/>
         <property key="labeling/fontStrikeout" value="false"/>
@@ -821,15 +840,15 @@ def my_form_open(dialog, layer, feature):
         <property key="labeling/maxNumLabels" value="2000"/>
         <property key="labeling/mergeLines" value="false"/>
         <property key="labeling/minFeatureSize" value="0"/>
-        <property key="labeling/multilineAlign" value="4294967295"/>
+        <property key="labeling/multilineAlign" value="3"/>
         <property key="labeling/multilineHeight" value="1"/>
-        <property key="labeling/namedStyle" value="Normal"/>
+        <property key="labeling/namedStyle" value=""/>
         <property key="labeling/obstacle" value="true"/>
         <property key="labeling/obstacleFactor" value="1"/>
         <property key="labeling/obstacleType" value="0"/>
         <property key="labeling/offsetType" value="0"/>
         <property key="labeling/placeDirectionSymbol" value="0"/>
-        <property key="labeling/placement" value="2"/>
+        <property key="labeling/placement" value="6"/>
         <property key="labeling/placementFlags" value="10"/>
         <property key="labeling/plussign" value="false"/>
         <property key="labeling/predefinedPositionOrder" value="TR,TL,BR,BL,R,L,TSR,BSR"/>
@@ -915,8 +934,8 @@ def my_form_open(dialog, layer, feature):
       <displayfield>name</displayfield>
       <label>0</label>
       <labelattributes>
-        <label fieldname="" text="Label"/>
-        <family fieldname="" name="MS Shell Dlg 2"/>
+        <label fieldname="" text="Etiqueta"/>
+        <family fieldname="" name=".SF NS Text"/>
         <size fieldname="" units="pt" value="12"/>
         <bold fieldname="" on="0"/>
         <italic fieldname="" on="0"/>
@@ -936,7 +955,7 @@ def my_form_open(dialog, layer, feature):
       </labelattributes>
       <SingleCategoryDiagramRenderer diagramType="Histogram" sizeLegend="0" attributeLegend="1">
         <DiagramCategory penColor="#000000" labelPlacementMethod="XHeight" penWidth="0" diagramOrientation="Up" sizeScale="0,0,0,0,0,0" minimumSize="0" barWidth="5" penAlpha="255" maxScaleDenominator="1e+08" backgroundColor="#ffffff" transparency="0" width="15" scaleDependency="Area" backgroundAlpha="255" angleOffset="1440" scaleBasedVisibility="0" enabled="0" height="15" lineSizeScale="0,0,0,0,0,0" sizeType="MM" lineSizeType="MM" minScaleDenominator="inf">
-          <fontProperties description="MS Shell Dlg 2,8.25,-1,5,50,0,0,0,0,0" style=""/>
+          <fontProperties description=".SF NS Text,13,-1,5,50,0,0,0,0,0" style=""/>
           <attribute field="" color="#000000" label=""/>
         </DiagramCategory>
         <symbol alpha="1" clip_to_extent="1" type="marker" name="sizeSymbol">
@@ -962,7 +981,7 @@ def my_form_open(dialog, layer, feature):
           </layer>
         </symbol>
       </SingleCategoryDiagramRenderer>
-      <DiagramLayerSettings yPosColumn="-1" showColumn="-1" linePlacementFlags="10" placement="2" dist="0" xPosColumn="-1" priority="0" obstacle="0" zIndex="0" showAll="1"/>
+      <DiagramLayerSettings yPosColumn="-1" showColumn="-1" linePlacementFlags="10" placement="0" dist="0" xPosColumn="-1" priority="0" obstacle="0" zIndex="0" showAll="1"/>
       <annotationform>.</annotationform>
       <aliases>
         <alias field="id" index="0" name=""/>
@@ -982,16 +1001,16 @@ def my_form_open(dialog, layer, feature):
       <editforminit/>
       <editforminitcodesource>0</editforminitcodesource>
       <editforminitfilepath>.</editforminitfilepath>
-      <editforminitcode><![CDATA[# -*- coding: utf-8 -*-
+      <editforminitcode><![CDATA[# -*- codificación: utf-8 -*-
 """
-QGIS forms can have a Python function that is called when the form is
-opened.
+Los formularios de QGIS pueden tener una función de Python que
+es llamada cuando se abre el formulario.
 
-Use this function to add extra logic to your forms.
+Use esta función para añadir lógica extra a sus formularios.
 
-Enter the name of the function in the "Python Init function"
-field.
-An example follows:
+Introduzca el nombre de la función en el campo
+"Python Init function".
+Sigue un ejemplo:
 """
 from qgis.PyQt.QtWidgets import QWidget
 
@@ -1010,7 +1029,7 @@ def my_form_open(dialog, layer, feature):
         <default field="id" expression=""/>
         <default field="name" expression=""/>
       </defaults>
-      <previewExpression></previewExpression>
+      <previewExpression>COALESCE( "name", '&lt;NULL>' )</previewExpression>
     </maplayer>
   </projectlayers>
   <properties>
@@ -1028,6 +1047,17 @@ def my_form_open(dialog, layer, feature):
     </SemiAutomaticClassificationPlugin>
     <WMSContactPerson type="QString"></WMSContactPerson>
     <WMSOnlineResource type="QString"></WMSOnlineResource>
+    <Bookmarks>
+      <Row-0>
+        <Project type="QString">darro_basemap.qgs</Project>
+        <MaxX type="double">476129.375</MaxX>
+        <MinX type="double">445495.625</MinX>
+        <MaxY type="double">4130467.77151639</MaxY>
+        <MinY type="double">4110057.22848361</MinY>
+        <Name type="QString">vista general</Name>
+      </Row-0>
+      <count type="int">1</count>
+    </Bookmarks>
     <WMSUseLayerIDs type="bool">false</WMSUseLayerIDs>
     <WMSContactOrganization type="QString"></WMSContactOrganization>
     <WMSKeywordList type="QStringList">
@@ -1074,7 +1104,7 @@ def my_form_open(dialog, layer, feature):
       <DefaultSnapToleranceUnit type="int">2</DefaultSnapToleranceUnit>
       <LayerSnappingList type="QStringList">
         <value>cuencas20170713201102656</value>
-        <value>rios20170713213356294</value>
+        <value>main_heads20171026150502946</value>
       </LayerSnappingList>
       <LayerSnappingEnabledList type="QStringList">
         <value>disabled</value>

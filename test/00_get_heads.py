@@ -6,8 +6,7 @@ Granada University (Spain)
 March, 2017
 
 Testing suite for profiler.py
-Last modified: 16 June 2017
-    - Adapted for Python 3.5
+Last modified: 26 Octubre 2017
 """
 
 import time

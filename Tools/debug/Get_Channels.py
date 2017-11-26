@@ -28,7 +28,7 @@
 #  Version: 1.0
 #  July 14, 2017
 
-#  Last modified July 14, 2017
+#  Last modified 26 November, 2017
 
 import ogr
 import osr
@@ -38,21 +38,9 @@ import os
 import profiler as p
 
 
-# ARGUMENTS
-# =========
-dem = "../../test/data/in/darro25.tif"
-fac = "../../test/data/in/darro25fac.tif"
-threshold = 1000
-units = "CELL"
-basin_shp = "../../test/data/in/cuencas.shp"
-head_shp = "../../test/data/in/main_heads.shp"
-id_field = "id"
-out_shp = "../../test/data/out/GetChannels_output.shp"
-
-
 # PROGRAM CODE
 # =============
-def main(dem, fac, threshold, units, basin_shp, head_shp, id_field, out_shp):
+def main(dem, fac, out_shp, threshold=0, units="CELL", head_shp="", id_field="", basin_shp=""):
 
     # Obtenemos todas las cabeceras del DEM
     if threshold:
@@ -71,17 +59,27 @@ def main(dem, fac, threshold, units, basin_shp, head_shp, id_field, out_shp):
 
     if heads.shape[0] == 0:
         return
+    
+    # Numeramos nuevamente las cabeceras
+    ord_id = np.arange(len(heads)).astype("float32")
+    heads[:, 5] = ord_id
 
     # Obtenemos los diferentes poligonos de las cuencas
-    dataset = ogr.Open(basin_shp)
-    layer = dataset.GetLayer(0)
+    if basin_shp:
+        dataset = ogr.Open(basin_shp)
+        layer = dataset.GetLayer(0)
 
-    # Otenemos los canales dentro de cada cuenca
-    channels = []
-    for feat in layer:
-        basin_geom = feat.GetGeometryRef()
-        heads_inside = p.heads_inside_basin(heads, basin_geom)
-        channels.extend(p.get_channels(fac, dem, heads_inside, basin_geom))
+        # Otenemos los canales dentro de cada cuenca
+        channels = []
+        for feat in layer:
+            basin_geom = feat.GetGeometryRef()
+            heads_inside = p.heads_inside_basin(heads, basin_geom)
+            # Numeramos nuevamente las cabeceras
+            ord_id = np.arange(len(heads_inside)).astype("float32")
+            heads_inside[:, 5] = ord_id
+            channels.extend(p.get_channels(fac, dem, heads_inside, basin_geom))
+    else:
+        channels = p.get_channels(fac, dem, heads)
 
     # Creamos output shapefile
     proj_wkt = gdal.Open(dem).GetProjection()
@@ -111,5 +109,3 @@ def main(dem, fac, threshold, units, basin_shp, head_shp, id_field, out_shp):
         feature.SetGeometry(geom)
         feature.SetField("id", name)
         layer.CreateFeature(feature)
-
-main(dem, fac, threshold, units, basin_shp, head_shp, id_field, out_shp)

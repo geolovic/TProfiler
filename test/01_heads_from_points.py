@@ -6,7 +6,7 @@ Granada University (Spain)
 March, 2017
 
 Testing suite for profiler.py
-Last modified: 16 June 2017
+Last modified: 26 October 2017
 """
 
 import time
@@ -18,19 +18,20 @@ print("Test for profiler.heads_from_points()")
 def test01():
     """
     Test for profiler.heads_from_points() function
-    Intput points are in "data/in/cabeceras_darro.shp"
+    Intput points are in "data/in/main_heads.shp"
+    Test con id_field
     """
     
     inicio = time.time()
     print("=" * 40)
     print("Test 01 para profiler.heads_from_points() function")
-    print("Testing a right id_field")
+    print("Testing heads with an id_field")
     print("Test in progress...")
     
     # Test parameters
     dem = "data/in/darro25.tif"
-    pointshp = "data/in/cabeceras_darro.shp"
-    out_txt = "data/out/01_cabeceras_darro_1.txt"
+    pointshp = "data/in/main_heads.shp"
+    out_txt = "data/out/01_cabeceras_puntos_01.txt"
     id_field = "id"
     
     cabeceras = p.heads_from_points(dem, pointshp, id_field)
@@ -53,7 +54,8 @@ def test01():
 def test02():
     """
     Test for profiler.heads_from_points() function
-    Intput points are in "data/in/cabeceras_darro.shp"
+    Intput points are in "data/in/main_heads.shp"
+    Test sin campo id_field
     """
 
     inicio = time.time()
@@ -64,8 +66,8 @@ def test02():
 
     # Test parameters
     dem = "data/in/darro25.tif"
-    pointshp = "data/in/cabeceras_darro.shp"
-    out_txt = "data/out/01_cabeceras_darro_2.txt"
+    pointshp = "data/in/main_heads.shp"
+    out_txt = "data/out/01_cabeceras_puntos_02.txt"
 
     cabeceras = p.heads_from_points(dem, pointshp)
     outfile = open(out_txt, "w")
@@ -87,7 +89,8 @@ def test02():
 def test03():
     """
     Test for profiler.heads_from_points() function
-    Intput points are in "data/in/cabeceras_darro.shp"
+    Intput points are in "data/in/main_heads.shp"
+    Test con id_field que no existe en la capa de puntos
     """
 
     inicio = time.time()
@@ -98,8 +101,8 @@ def test03():
 
     # Test parameters
     dem = "data/in/darro25.tif"
-    pointshp = "data/in/cabeceras_darro.shp"
-    out_txt = "data/out/01_cabeceras_darro_3.txt"
+    pointshp = "data/in/main_heads.shp"
+    out_txt = "data/out/01_cabeceras_puntos_03.txt"
     id_field = "id_rio"
 
     cabeceras = p.heads_from_points(dem, pointshp, id_field)
@@ -123,6 +126,7 @@ def test04():
     """
     Test for profiler.heads_from_points() function
     Intput points are in "data/in/cabeceras_darro.shp"
+    Test un campo id_field que no es entero
     """
 
     inicio = time.time()
@@ -133,9 +137,9 @@ def test04():
 
     # Test parameters
     dem = "data/in/darro25.tif"
-    pointshp = "data/in/cabeceras_darro.shp"
-    out_txt = "data/out/01_cabeceras_darro_4.txt"
-    id_field = "Name"
+    pointshp = "data/in/main_heads.shp"
+    out_txt = "data/out/01_cabeceras_puntos_04.txt"
+    id_field = "name"
 
     cabeceras = p.heads_from_points(dem, pointshp, id_field)
     outfile = open(out_txt, "w")

@@ -33,11 +33,11 @@ def test01():
     fac = "data/in/darro25fac.tif"
     dem = "data/in/darro25.tif"
     basin = "data/in/cuenca_darro.shp"
-    cabeceras = "data/in/cabeceras_darro.shp"
+    cabeceras = "data/in/main_heads.shp"
     id_field = "id"
     umbral = 1000
     units = "CELL"
-    out_txt = "data/out/02_basins_darro" + ".txt"
+    out_txt = "data/out/02_cabeceras_darro" + ".txt"
 
     # Obtenemos todas las cabeceras del DEM
     heads = p.get_heads(fac, dem, umbral, units)
@@ -93,7 +93,7 @@ def test02():
     id_field = "id"
     umbral = 1000
     units = "CELL"
-    out_txt = "data/out/02_basins_all_basins" + ".txt"
+    out_txt = "data/out/02_cabeceras_cuencas" + ".txt"
 
     # Obtenemos todas las cabeceras del DEM
     heads = p.get_heads(fac, dem, umbral, units)

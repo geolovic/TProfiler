@@ -4,7 +4,7 @@ José Vicente Pérez
 Granada University (Spain)
 March, 2017
 Testing suite for profiler.py
-Last modified: 19 June 2017
+Last modified: 29 October 2017
 """
 
 import time
@@ -25,7 +25,7 @@ def test01():
     print("Test in progress...")
     
     # Test parameters
-    profiles_path = "data/in/profiles_basins.npy"
+    profiles_path = "data/in/perfiles.npy"
     out_point_shp = "data/out/05_profile_points" + ".shp"
     dl = 250
     out_line_shp = "data/out/05_profile_lines" + ".shp"
@@ -36,6 +36,8 @@ def test01():
 
     fin = time.time()
     print("Test finalizado en " + str(fin - inicio) + " segundos")
+    print("Resultado de puntos en " + out_point_shp)
+    print("Resultado de líneas en " + out_line_shp)
     print("=" * 40)
 
 
