@@ -28,7 +28,7 @@
 #  Version: 1.0
 #  July 14, 2017
 
-#  Last modified 30 October, 2017
+#  Last modified 26 November, 2017
 
 import ogr
 import osr
@@ -59,6 +59,10 @@ def main(dem, fac, out_shp, threshold=0, units="CELL", head_shp="", id_field="",
 
     if heads.shape[0] == 0:
         return
+    
+    # Numeramos nuevamente las cabeceras
+    ord_id = np.arange(len(heads)).astype("float32")
+    heads[:, 5] = ord_id
 
     # Obtenemos los diferentes poligonos de las cuencas
     if basin_shp:
@@ -70,6 +74,9 @@ def main(dem, fac, out_shp, threshold=0, units="CELL", head_shp="", id_field="",
         for feat in layer:
             basin_geom = feat.GetGeometryRef()
             heads_inside = p.heads_inside_basin(heads, basin_geom)
+            # Numeramos nuevamente las cabeceras
+            ord_id = np.arange(len(heads_inside)).astype("float32")
+            heads_inside[:, 5] = ord_id
             channels.extend(p.get_channels(fac, dem, heads_inside, basin_geom))
     else:
         channels = p.get_channels(fac, dem, heads)

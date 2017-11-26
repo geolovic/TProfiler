@@ -26,7 +26,7 @@
 #  vperez@ugr.es // geolovic@gmail.com
 
 #  Version: 1.2
-#  November, 6th 2017
+#  November, 26th 2017
 
 #  Last modified November, 6th 2017
 
@@ -1045,6 +1045,10 @@ def main(dem, fac, out_shp, threshold=0, units="CELL", head_shp="", id_field="",
     if heads.shape[0] == 0:
         return
 
+    # Numeramos nuevamente las cabeceras
+    ord_id = np.arange(len(heads)).astype("float32")
+    heads[:, 5] = ord_id
+
     # Obtenemos los diferentes poligonos de las cuencas
     if basin_shp:
         dataset = ogr.Open(basin_shp)
@@ -1055,6 +1059,9 @@ def main(dem, fac, out_shp, threshold=0, units="CELL", head_shp="", id_field="",
         for feat in layer:
             basin_geom = feat.GetGeometryRef()
             heads_inside = heads_inside_basin(heads, basin_geom)
+            # Numeramos nuevamente las cabeceras
+            ord_id = np.arange(len(heads_inside)).astype("float32")
+            heads_inside[:, 5] = ord_id
             channels.extend(get_channels(fac, dem, heads_inside, basin_geom))
     else:
         channels = get_channels(fac, dem, heads)

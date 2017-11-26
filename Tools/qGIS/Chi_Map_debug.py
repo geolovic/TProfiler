@@ -28,7 +28,7 @@
 #  Version: 1.2
 #  November, 6th 2017
 
-#  Last modified November, 6th 2017
+#  Last modified 26 November, 2017
 
 import ogr
 import osr
@@ -1325,6 +1325,10 @@ def main(dem, fac, out_chi, out_file=False, threshold=0, units="CELL", basin_shp
 
     if len(heads) == 0:
         return
+    
+    # Numeramos nuevamente las cabeceras
+    ord_id = np.arange(len(heads)).astype("float32")
+    heads[:, 5] = ord_id
 
     # Lista vacia para perfiles de salida
     out_profiles = []
@@ -1336,6 +1340,9 @@ def main(dem, fac, out_chi, out_file=False, threshold=0, units="CELL", basin_shp
             basin_geom = feat.GetGeometryRef()
             heads_inside = heads_inside_basin(heads, basin_geom)
             if len(heads_inside) > 0:
+                # Numeramos nuevamente las cabeceras
+                ord_id = np.arange(len(heads_inside)).astype("float32")
+                heads_inside[:, 5] = ord_id
                 out_profiles.extend(get_profiles(fac, dem, heads_inside, basin=basin_geom, tributaries=True,
                                                    thetaref=thetaref, reg_points=reg_points, smooth=smooth))
     else:
