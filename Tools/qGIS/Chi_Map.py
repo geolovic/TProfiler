@@ -1398,7 +1398,7 @@ def main(dem, fac, out_chi, out_file=False, threshold=0, units="CELL", basin_shp
 
     # Numeramos nuevamente las cabeceras
     ord_id = np.arange(len(heads)).astype("float32")
-    heads[:, 5] = ord_
+    heads[:, 5] = ord_id
 
     # Lista vacia para perfiles de salida
     out_profiles = []
