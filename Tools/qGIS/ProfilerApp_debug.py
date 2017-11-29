@@ -28,7 +28,7 @@
 #  Version: 1.2
 #  November, 6th 2017
 
-#  Last modified November, 6th 2017
+#  Last modified 29 November, 2017
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -80,9 +80,13 @@ class ProfilerApp:
         :param basedir: Base directory to save regressions and knickpoints
         """
         # Create the output folder (for knickpoints and regressions)
-        if basedir[-1] == "/":
-            basedir = basedir[:-1]
-        self.basedir = basedir + "/out_files"
+        if not basedir:
+            self.basedir = "out_files"
+        elif basedir[-1] == "/":
+            self.basedir = basedir + "out_files"
+        else:
+            self.basedir = basedir + "/out_files"
+        
         if not os.path.exists(self.basedir):
             os.mkdir(self.basedir)
 

@@ -28,7 +28,7 @@
 #  Version: 1.2
 #  November, 26th 2017
 
-#  Last modified November, 6th 2017
+#  Last modified 29 November, 2017
 
 import ogr
 import osr
@@ -68,7 +68,7 @@ else:
     basin_shp = ""
 
 
-# IMPORTED MODULES (November, 6th 2017)
+# IMPORTED MODULES (29 November, 2017)
 # =====================================
 PROFILE_DEFAULT = {'name': "", 'thetaref': 0.45, 'chi0': 0, 'reg_points': 4, 'srs': "", 'smooth': 0}
 
@@ -406,20 +406,23 @@ class TProfile:
 
         # Set profile properties
         self._srs = srs  # WKT with the Spatial Reference
-        self._mouthdist = mouthdist
+        self._mouthdist = float(mouthdist)
+        self._chi0 = chi0
+        self._smooth_win = smooth
         self.dem_res = float(dem_res)
-        self.rid = rid
+        self.rid = int(rid)
         if name == "":
             self.name = str(rid)
         else:
-            self.name = name
+            self.name = str(name)
         self.thetaref = abs(thetaref)
         self.slope_reg_points = reg_points
         self.ksn_reg_points = reg_points
+        self.dslope_reg_points = reg_points
         self.n_points = pf_data.shape[0]
 
         # Get profile data from pf_data array
-        aux_values = np.empty((pf_data.shape[0], 6))
+        aux_values = np.empty((pf_data.shape[0], 8))
         aux_values.fill(np.nan)
         self._data = np.append(pf_data, aux_values, axis=1)
 
@@ -427,12 +430,13 @@ class TProfile:
         self._data[:, 10] = np.copy(self._data[:, 2])
 
         # Smooth profile elevations before to calculate ksn and chi
-        self.smooth(smooth)
+        self.smooth(self._smooth_win)
 
         # Create slopes, chi and ksn values
         self.calculate_slope(self.slope_reg_points)
         self.calculate_chi(chi0=chi0)
         self.calculate_ksn(self.ksn_reg_points)
+        self.calculate_dslope(self.dslope_reg_points)
 
     def get_projection(self):
         """
@@ -615,6 +619,40 @@ class TProfile:
         else:
             return ksn
 
+    def get_dslope(self, threshold=0, head=True, lq=False):
+        """
+        Returns slope derivates calculated by linear regression
+
+        :param threshold: *float* R^2 threshold. (Slope derivates with R^2 < threshold will be in lq_dslopes array)
+        :param head: boolean - Specifies if slopes are returned from head (True) or mouth (False)
+        :param lq: boolean - Specifies lq_slopes will be returned or not
+        :return: array with slopes (lq=False) or tuple of arrays (dslopes, lq_dslopes) (lq=True)
+         dslopes --> numpy.array of slope derivates with R^2 >= threshold (lq_dslopes will receive a np.nan value)
+         lq_dslopes --> numpy.array of slope derivates with R^2 < threshold (dslopes will receive a np.nan value)
+        """
+        dslopes = []
+        lq_dslopes = []
+        r2_values = self.get_dslope_r2()
+        for n in range(len(self._data)):
+            if r2_values[n] >= threshold:
+                dslopes.append(self._data[n, 11])
+                lq_dslopes.append(np.nan)
+            else:
+                dslopes.append(np.nan)
+                lq_dslopes.append(self._data[n, 11])
+
+        dslopes = np.array(dslopes)
+        lq_dslopes = np.array(lq_dslopes)
+
+        if not head:
+            dslopes = dslopes[::-1]
+            lq_dslopes = lq_dslopes[::-1]
+
+        if lq:
+            return dslopes, lq_dslopes
+        else:
+            return dslopes
+
     def get_slope_r2(self, head=True):
         """
         Returns slope R2 values from linear regressions for all vertices
@@ -626,6 +664,18 @@ class TProfile:
             return np.copy(self._data[:, 8])
         else:
             return np.copy(self._data[::-1, 8])
+
+    def get_dslope_r2(self, head=True):
+        """
+        Returns dslope R2 values from linear regressions for all vertices
+
+        :param head: boolean - Specifies if R2 values are returned from head (True) or mouth (False)
+        :return: numpy.array wiht dslope R2 values for all vertices
+        """
+        if head:
+            return np.copy(self._data[:, 12])
+        else:
+            return np.copy(self._data[::-1, 12])
 
     def get_ksn_r2(self, head=True):
         """
@@ -684,10 +734,11 @@ class TProfile:
 
     def reset_elevations(self):
         """
-        Reset smooth elevations. When reset, smooth elevations will equal to raw elevations
+        Reset smooth elevations. When reset, smooth elevations will reset to their original values
         """
         for n in range(len(self._data)):
             self._data[n, 2] = np.copy(self._data[n, 10])
+        self.smooth(self._smooth_win)
 
     def calculate_chi(self, a0=1, chi0=0.0):
         """
@@ -750,6 +801,47 @@ class TProfile:
                 self._data[n, 6] = 0.001
             else:
                 self._data[n, 6] = abs(gradient)
+
+    def calculate_dslope(self, reg_points=4):
+        """
+        This function calculates the slopes derivates for all vertexes by linear regression of distance-slope data.
+        Dslopes are stored in column c11 of self._data. Together with dslopes, R^2 are calculated (column  c12)
+
+        :param reg_points: Number of profile points before and after each vertex to calculate slope derivates
+        :return: None
+        """
+        self.dslope_reg_points = reg_points
+        li = self.get_l()
+        zi = self.get_slope()
+
+        for n in range(self.n_points):
+            low = n - reg_points
+            high = n + reg_points
+
+            if low < 0:
+                low = 0
+            if high > self.n_points:
+                high = self.n_points
+
+            sample_l = li[low:high + 1]
+            sample_z = zi[low:high + 1]
+
+            a = np.array([sample_l, np.ones(len(sample_l))]).T
+            y = sample_z
+            model, resid = np.linalg.lstsq(a, y)[:2]
+
+            if (y.size * y.var()) == 0:
+                r2 = 0
+            else:
+                r2 = 1 - resid / (y.size * y.var())
+            gradient = model[0]
+
+            self._data[n, 12] = abs(r2)
+
+            if abs(gradient) < 0.0001:
+                self._data[n, 11] = 0.0001
+            else:
+                self._data[n, 11] = abs(gradient)
 
     def calculate_ksn(self, reg_points=4, raw_z=False):
         """
