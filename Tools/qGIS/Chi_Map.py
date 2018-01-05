@@ -28,7 +28,7 @@
 #  Version: 1.2
 #  November, 6th 2017
 
-#  Last modified November, 6th 2017
+#  Last modified 29 November, 2017
 
 import ogr
 import osr
@@ -78,7 +78,7 @@ smooth = float(Smooth_window)
 distance = float(Segment_distance)
 
 
-# IMPORTED MODULES (November, 6th 2017)
+# IMPORTED MODULES (29 November, 2017)
 # =====================================
 PROFILE_DEFAULT = {'name': "", 'thetaref': 0.45, 'chi0': 0, 'reg_points': 4, 'srs': "", 'smooth': 0}
 
@@ -398,8 +398,8 @@ def _profiles_to_points(out_shp, profiles):
         layer.CreateField(ogr.FieldDefn(campos[n], tipos[n]))
 
     # Get data from all the profiles
-    id_perfil = 0
     for profile in profiles:
+        id_perfil = profile.rid
         xi = profile.get_x()
         yi = profile.get_y()
         li = profile.get_l()
@@ -410,7 +410,7 @@ def _profiles_to_points(out_shp, profiles):
         rksn = profile.get_ksn_r2()
         slp = profile.get_slope()
         rslp = profile.get_slope_r2()
-        id_arr = np.zeros(xi.size)
+        id_arr = np.zeros(xi.size, dtype="int32")
         id_arr.fill(id_perfil)
         data = np.array((xi, yi, id_arr, li, ai, zi, chi, ksn, rksn, slp, rslp)).T
         data = data[:-1]  # Remove the last point, because it will have the area of the merging channel
@@ -458,10 +458,10 @@ def _profiles_to_lines(out_shp, profiles, distance):
     for n in range(len(campos)):
         layer.CreateField(ogr.FieldDefn(campos[n], tipos[n]))
 
-    id_perfil = 1
     for perfil in profiles:
-        # Transformamos la distancia a nÃºmero de celdas
-        # dx es el nÃºmero de puntos que tendrÃ¡ cada segmento (nÃºmero impar)
+        id_perfil = perfil.rid
+        # Transformamos la distancia a numero de celdas
+        # dx es el numero de puntos que tendra cada segmento (numero impar)
         cellsize = perfil.dem_res
         if distance == 0:
             dx = len(perfil._data)
@@ -534,8 +534,6 @@ def _profiles_to_lines(out_shp, profiles, distance):
             # Last point of the line was p2-1
             p1 = p2 - 1
             p2 = p1 + dx
-
-        id_perfil += 1
 
 
 def open_raster(raster_path):
@@ -650,11 +648,13 @@ class TProfile:
 
         # Set profile properties
         self._srs = srs  # WKT with the Spatial Reference
-        self._mouthdist = mouthdist
+        self._mouthdist = float(mouthdist)
+        self._chi0 = chi0
+        self._smooth_win = smooth
         self.dem_res = float(dem_res)
-        self.rid = rid
+        self.rid = int(rid)
         if name == "":
-            self.name = str(rid)
+            self.name = str(name)
         else:
             self.name = name
         self.thetaref = abs(thetaref)
@@ -671,7 +671,7 @@ class TProfile:
         self._data[:, 10] = np.copy(self._data[:, 2])
 
         # Smooth profile elevations before to calculate ksn and chi
-        self.smooth(smooth)
+        self.smooth(self._smooth_win)
 
         # Create slopes, chi and ksn values
         self.calculate_slope(self.slope_reg_points)
@@ -926,12 +926,15 @@ class TProfile:
                 elevations = self._data[low:high, 10]
                 self._data[ind, 2] = np.mean(elevations)
 
-    def reset_elevations(self):
+    def reset_elevations(self, raw=False):
         """
         Reset smooth elevations. When reset, smooth elevations will equal to raw elevations
         """
         for n in range(len(self._data)):
             self._data[n, 2] = np.copy(self._data[n, 10])
+        
+        if not raw:
+            self.smooth(self._smooth_win)
 
     def calculate_chi(self, a0=1, chi0=0.0):
         """
@@ -1306,7 +1309,7 @@ def main(dem, fac, out_chi, out_file=False, threshold=0, units="CELL", basin_shp
 
     # Numeramos nuevamente las cabeceras
     ord_id = np.arange(len(heads)).astype("float32")
-    heads[:, 5] = ord_
+    heads[:, 5] = ord_id
 
     # Lista vacia para perfiles de salida
     out_profiles = []

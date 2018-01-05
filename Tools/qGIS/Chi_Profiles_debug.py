@@ -28,7 +28,7 @@
 #  Version: 1.2
 #  November, 6th 2017
 
-#  Last modified November, 6th 2017
+#  Last modified 29 November, 2017
 
 import numpy as np
 import gdal
@@ -79,7 +79,7 @@ reg_points = 4
 smooth = 0
 
 
-# IMPORTED MODULES (November, 6th 2017)
+# IMPORTED MODULES (29 November, 2017)
 # ===================================
 NTYPES = {'int8': 3, 'int16': 3, 'int32': 5, 'int64': 5, 'uint8': 1, 'uint16': 2,
           'uint32': 4, 'uint64': 4, 'float16': 6, 'float32': 6, 'float64': 7}
@@ -338,13 +338,15 @@ class TProfile:
 
         # Set profile properties
         self._srs = srs  # WKT with the Spatial Reference
-        self._mouthdist = mouthdist
+        self._mouthdist = float(mouthdist)
+        self._chi0 = chi0
+        self._smooth_win = smooth
         self.dem_res = float(dem_res)
-        self.rid = rid
+        self.rid = int(rid)
         if name == "":
             self.name = str(rid)
         else:
-            self.name = name
+            self.name = str(name)
         self.thetaref = abs(thetaref)
         self.slope_reg_points = reg_points
         self.ksn_reg_points = reg_points
@@ -359,7 +361,7 @@ class TProfile:
         self._data[:, 10] = np.copy(self._data[:, 2])
 
         # Smooth profile elevations before to calculate ksn and chi
-        self.smooth(smooth)
+        self.smooth(self._smooth_win)
 
         # Create slopes, chi and ksn values
         self.calculate_slope(self.slope_reg_points)
@@ -614,12 +616,15 @@ class TProfile:
                 elevations = self._data[low:high, 10]
                 self._data[ind, 2] = np.mean(elevations)
 
-    def reset_elevations(self):
+    def reset_elevations(self, raw=False):
         """
         Reset smooth elevations. When reset, smooth elevations will equal to raw elevations
         """
         for n in range(len(self._data)):
             self._data[n, 2] = np.copy(self._data[n, 10])
+        
+        if not raw:
+            self.smooth(self._smooth_win)
 
     def calculate_chi(self, a0=1, chi0=0.0):
         """
