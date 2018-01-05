@@ -616,7 +616,7 @@ def _profiles_to_lines(out_shp, profiles, distance):
             # Add values to feature
             values = [id_perfil, mid_l, mid_area, mid_z, mid_chi, ksn, rksn, slope, rslope]
             for idx, value in enumerate(values):
-                feature.SetField(campos[idx], value)
+                feature.SetField(campos[idx], int(value))
 
             # Add geometry to feature and feature to layer
             feature.SetGeometry(geom)
