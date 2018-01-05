@@ -8,10 +8,10 @@ Last modified: 29 October 2017
 """
 
 import time
-import sys
-sys.path.append("../src")
 import profiler as p
+import ogr
 import matplotlib.pyplot as plt
+import numpy as np
 print("Tests for profiler.profiles_from_rivers()")
 
     
@@ -34,8 +34,7 @@ def test01():
     name_field = "name"
 
     perfiles = p.profiles_from_rivers(fac, dem, river_shapefile, id_field=id_field, name_field=name_field)
-    title = "Test with id and names. tributaries=True"
-    draw_profiles(perfiles, title)
+    draw_profiles(perfiles)
 
     fin = time.time()
     print("Test finalizado en " + str(fin - inicio) + " segundos")
@@ -59,8 +58,7 @@ def test02():
 
     # Check with id and name_field
     perfiles = p.profiles_from_rivers(fac, dem, river_shapefile)
-    title = "Test without id and names. tributaries=True"
-    draw_profiles(perfiles, title)
+    draw_profiles(perfiles)
 
     fin = time.time()
     print("Test finalizado en " + str(fin - inicio) + " segundos")
@@ -86,8 +84,7 @@ def test03():
 
     # Get profiles
     perfiles = p.profiles_from_rivers(fac, dem, river_shapefile, id_field, name_field, tributaries=False)
-    title = "Test with ids and names. tributaries=False"
-    draw_profiles(perfiles, title)
+    draw_profiles(perfiles)
 
     fin = time.time()
     print("Test finalizado en " + str(fin - inicio) + " segundos")
@@ -113,15 +110,14 @@ def test04():
 
     # Get profiles
     perfiles = p.profiles_from_rivers(fac, dem, river_shapefile, id_field, name_field, tributaries=True)
-    title = "Test shapefile with disconected rivers"
-    draw_profiles(perfiles, title)
+    draw_profiles(perfiles)
 
     fin = time.time()
     print("Test finalizado en " + str(fin - inicio) + " segundos")
     print("=" * 40)
 
 
-def draw_profiles(perfiles, title=""):
+def draw_profiles(perfiles):
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -130,13 +126,12 @@ def draw_profiles(perfiles, title=""):
         chi = perfil.get_chi(False)
         zi = perfil.get_z(False)
         ax.plot(chi, zi, label=perfil.name)
-    if title:
-        ax.set_title(title)
+
     ax.legend()
     plt.show()
 
 
-#test01()
-#test02()
-#test03()
+test01()
+test02()
+test03()
 test04()

@@ -8,8 +8,6 @@ Last modified: 27 October 2017
 """
 
 import time
-import sys
-sys.path.append("../src")
 import profiler as p
 import ogr
 import matplotlib.pyplot as plt

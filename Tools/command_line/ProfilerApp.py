@@ -88,7 +88,7 @@ class ProfilerApp:
             self.basedir = basedir + "out_files"
         else:
             self.basedir = basedir + "/out_files"
-        
+            
         if not os.path.exists(self.basedir):
             os.mkdir(self.basedir)
         
