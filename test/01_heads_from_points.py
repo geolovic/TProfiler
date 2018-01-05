@@ -6,10 +6,12 @@ Granada University (Spain)
 March, 2017
 
 Testing suite for profiler.py
-Last modified: 26 October 2017
+Last modified: 23 Diciembre 2017
 """
 
 import time
+import sys
+sys.path.append("../src")
 import profiler as p
 
 print("Test for profiler.heads_from_points()")

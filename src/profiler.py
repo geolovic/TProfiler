@@ -483,8 +483,8 @@ def _profiles_to_points(out_shp, profiles):
     layer = dataset.CreateLayer("perfiles", sp, ogr.wkbPoint)
 
     # Add fields
-    campos = ["id_profile", "L", "area", "z", "chi", "ksn", "rksn", "slope", "rslope", "dslope", "rdslope"]
-    tipos = [0, 2, 12, 2, 2, 2, 2, 2, 2, 2, 2]
+    campos = ["id_profile", "L", "area", "z", "chi", "ksn", "rksn", "slope", "rslope"]
+    tipos = [0, 2, 12, 2, 2, 2, 2, 2, 2]
     for n in range(len(campos)):
         layer.CreateField(ogr.FieldDefn(campos[n], tipos[n]))
 
